@@ -42,7 +42,7 @@ export const categories: Category[] = [
 ];
 
 // Sample products
-export const products: Product[] = [
+export let products: Product[] = [
   {
     id: 'product-1',
     name: 'Espresso',
@@ -160,3 +160,39 @@ export const paymentMethods = [
   { id: 'debit-card', name: 'Debit Card' },
   { id: 'mobile-payment', name: 'Mobile Payment' }
 ];
+
+// Product CRUD operations
+export const addProduct = (product: Omit<Product, 'id'>): Product => {
+  const newProduct = {
+    ...product,
+    id: `product-${Date.now()}`,
+  };
+  
+  products = [...products, newProduct];
+  return newProduct;
+};
+
+export const updateProduct = (id: string, updates: Partial<Product>): Product | null => {
+  const index = products.findIndex(p => p.id === id);
+  
+  if (index === -1) return null;
+  
+  const updatedProduct = { ...products[index], ...updates };
+  products = [
+    ...products.slice(0, index),
+    updatedProduct,
+    ...products.slice(index + 1)
+  ];
+  
+  return updatedProduct;
+};
+
+export const deleteProduct = (id: string): boolean => {
+  const initialLength = products.length;
+  products = products.filter(p => p.id !== id);
+  return products.length < initialLength;
+};
+
+export const getProductById = (id: string): Product | undefined => {
+  return products.find(p => p.id === id);
+};
