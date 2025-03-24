@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { addOrder, products, orders, type CartItem, type Order } from "@/utils/data";
 import { toast } from "sonner";
+import ProductGrid from "@/components/pos/ProductGrid";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -18,15 +19,12 @@ const POSSession = () => {
     (product) => product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const addToCart = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (!product) return;
-    
-    const existingItem = cart.find((item) => item.id === productId);
+  const addToCart = (product: CartItem) => {
+    const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.id === productId
+          item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -118,32 +116,10 @@ const POSSession = () => {
                 />
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                  {filteredProducts.map((product) => (
-                    <Card 
-                      key={product.id} 
-                      className="cursor-pointer overflow-hidden"
-                      onClick={() => addToCart(product.id)}
-                    >
-                      <div className="aspect-square overflow-hidden">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-full w-full object-cover transition-transform hover:scale-105"
-                        />
-                      </div>
-                      <CardContent className="p-3">
-                        <h3 className="font-medium">{product.name}</h3>
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-muted-foreground">
-                            Stock: {product.inStock}
-                          </p>
-                          <p className="font-semibold">${product.price.toFixed(2)}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <ProductGrid
+                  products={filteredProducts}
+                  onAddToCart={addToCart}
+                />
               </CardContent>
             </Card>
           </div>

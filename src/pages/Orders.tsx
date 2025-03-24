@@ -435,7 +435,20 @@ const Orders = () => {
               <DialogTitle>Create New Order</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={addForm.handleSubmit(handleAddOrder)}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = addForm.getValues();
+              
+              handleAddOrder({
+                ...formData,
+                items: orderItems,
+                total: calculateTotal(orderItems),
+                tax: calculateTax(orderItems),
+                status: formData.status || "pending",
+                date: new Date(),
+                customerName: customers.find(c => c.id === formData.customerId)?.name || "Guest"
+              });
+            }}>
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <FormItem>
@@ -649,7 +662,21 @@ const Orders = () => {
               <DialogTitle>Edit Order</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={editForm.handleSubmit(handleEditOrder)}>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = editForm.getValues();
+              
+              if (selectedOrder) {
+                handleEditOrder({
+                  ...formData,
+                  id: selectedOrder.id,
+                  items: orderItems,
+                  total: calculateTotal(orderItems),
+                  tax: calculateTax(orderItems),
+                  date: selectedOrder.date,
+                });
+              }
+            }}>
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-1">
                   <FormItem>

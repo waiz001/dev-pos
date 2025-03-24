@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -124,10 +125,8 @@ const OrderForm: React.FC<OrderFormProps> = ({
       items: cart,
       total: calculateTotal() + calculateTax(),
       tax: calculateTax(),
-      customerName: selectedCustomer?.name || "Guest",
+      customerName: selectedCustomer?.name || values.customerName || "Guest",
     });
-    
-    toast.success(`Order ${initialData.id ? "updated" : "created"} successfully`);
   };
 
   return (
