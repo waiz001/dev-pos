@@ -1,8 +1,8 @@
 
 import React, { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,98 +20,96 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { paymentMethods, customers, updateCustomer } from "@/utils/data";
 import { toast } from "sonner";
+import { customers, paymentMethods, updateCustomer } from "@/utils/data";
 
-const recoverySchema = z.object({
-  customerId: z.string({
-    required_error: "Please select a customer",
-  }),
-  amount: z.string().refine(
-    (val) => {
-      const num = parseFloat(val);
-      return !isNaN(num) && num > 0;
-    },
-    {
-      message: "Amount must be a positive number",
-    }
-  ),
-  paymentMethod: z.string({
-    required_error: "Please select a payment method",
-  }),
+const formSchema = z.object({
+  customerId: z.string().min(1, { message: "Please select a customer" }),
+  amount: z.coerce.number().positive({ message: "Amount must be greater than 0" }),
+  paymentMethod: z.string().min(1, { message: "Please select a payment method" }),
 });
 
-type RecoveryFormValues = z.infer<typeof recoverySchema>;
-
-interface RecoveryFormProps {
-  onSuccess: () => void;
-}
-
-const RecoveryForm: React.FC<RecoveryFormProps> = ({ onSuccess }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const form = useForm<RecoveryFormValues>({
-    resolver: zodResolver(recoverySchema),
+const RecoveryForm = ({ onSuccess }) => {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       customerId: "",
-      amount: "",
+      amount: 0,
       paymentMethod: "",
     },
   });
 
-  const handleSubmit = (values: RecoveryFormValues) => {
-    setIsProcessing(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = (data) => {
+    setIsSubmitting(true);
     
     try {
-      const customer = customers.find(c => c.id === values.customerId);
+      // Find the customer
+      const customer = customers.find((c) => c.id === data.customerId);
+      
       if (!customer) {
         toast.error("Customer not found");
+        setIsSubmitting(false);
         return;
       }
       
-      const amount = parseFloat(values.amount);
+      // Calculate new balance after recovery
+      const updatedTotalSpent = customer.totalSpent - data.amount;
       
-      // Create a recovery transaction
+      // Update customer with new totalSpent (reducing the balance)
       const updatedCustomer = updateCustomer(customer.id, {
-        // You would normally have a dedicated balance field
-        // For this implementation, we'll update the totalSpent to simulate a payment
-        totalSpent: customer.totalSpent + amount,
+        totalSpent: updatedTotalSpent >= 0 ? updatedTotalSpent : 0,
       });
       
       if (updatedCustomer) {
-        toast.success(`Successfully recovered $${amount.toFixed(2)} from ${customer.name}`);
-        onSuccess();
+        toast.success(`Successfully recovered $${data.amount} from ${customer.name}`);
+        
+        // Create a record in orders or a dedicated recoveries collection if needed
+        // This could be implemented if needed
+        
+        if (onSuccess) {
+          onSuccess();
+        }
+        
         form.reset();
       } else {
-        toast.error("Failed to process recovery");
+        toast.error("Failed to update customer balance");
       }
     } catch (error) {
       console.error("Recovery error:", error);
       toast.error("An error occurred during recovery");
     } finally {
-      setIsProcessing(false);
+      setIsSubmitting(false);
     }
   };
 
+  const selectedCustomerId = form.watch("customerId");
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
+  const currentBalance = selectedCustomer?.totalSpent || 0;
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="customerId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Customer</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a customer" />
+                    <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {customers.map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} (Balance: ${(customer.totalOrders * 10 - customer.totalSpent).toFixed(2)})
+                      {customer.name} (Balance: ${customer.totalSpent.toFixed(2)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -121,19 +119,28 @@ const RecoveryForm: React.FC<RecoveryFormProps> = ({ onSuccess }) => {
           )}
         />
 
+        {selectedCustomerId && (
+          <div className="rounded-md bg-muted p-3">
+            <p className="text-sm">Current Balance: <span className="font-semibold">${currentBalance.toFixed(2)}</span></p>
+          </div>
+        )}
+
         <FormField
           control={form.control}
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Recovery Amount</FormLabel>
+              <FormLabel>Amount to Recover</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 
-                  step="0.01" 
-                  min="0.01" 
-                  placeholder="Enter amount" 
-                  {...field} 
+                  step="0.01"
+                  placeholder="0.00" 
+                  {...field}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.onChange(value === "" ? "" : parseFloat(value));
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -147,7 +154,10 @@ const RecoveryForm: React.FC<RecoveryFormProps> = ({ onSuccess }) => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Payment Method</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select payment method" />
@@ -166,9 +176,14 @@ const RecoveryForm: React.FC<RecoveryFormProps> = ({ onSuccess }) => {
           )}
         />
 
-        <Button type="submit" className="w-full" disabled={isProcessing}>
-          {isProcessing ? "Processing..." : "Process Recovery"}
-        </Button>
+        <div className="flex justify-end gap-3">
+          <Button type="button" variant="outline" onClick={onSuccess}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Processing..." : "Recover Payment"}
+          </Button>
+        </div>
       </form>
     </Form>
   );

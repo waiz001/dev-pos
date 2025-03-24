@@ -96,8 +96,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const user = localStorage.getItem("currentUser");
     if (user) {
-      setCurrentUser(JSON.parse(user));
-      setIsAuthenticated(true);
+      try {
+        const parsedUser = JSON.parse(user);
+        // Ensure the stored user has all required permissions
+        if (!parsedUser.permissions) {
+          parsedUser.permissions = {
+            products: false,
+            orders: false,
+            customers: false,
+            reports: false,
+            settings: false,
+            users: false
+          };
+        }
+        
+        // Add any missing permissions with default false value
+        const requiredPermissions = ['products', 'orders', 'customers', 'reports', 'settings', 'users'];
+        requiredPermissions.forEach(perm => {
+          if (parsedUser.permissions[perm] === undefined) {
+            parsedUser.permissions[perm] = false;
+          }
+        });
+        
+        setCurrentUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (e) {
+        console.error("Error parsing stored user", e);
+        localStorage.removeItem("currentUser");
+      }
     }
   }, []);
 
@@ -107,6 +133,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const user = users.find((u) => u.username === username);
     
     if (user) {
+      // Ensure the user has all required permissions
+      if (!user.permissions) {
+        user.permissions = {
+          products: false,
+          orders: false,
+          customers: false,
+          reports: false,
+          settings: false,
+          users: false
+        };
+      }
+      
+      // Set defaults based on role if not already set
+      if (user.role === 'admin' && Object.values(user.permissions).some(p => p === false)) {
+        user.permissions = {
+          products: true,
+          orders: true,
+          customers: true,
+          reports: true,
+          settings: true,
+          users: true
+        };
+      }
+      
       setCurrentUser(user);
       setIsAuthenticated(true);
       localStorage.setItem("currentUser", JSON.stringify(user));

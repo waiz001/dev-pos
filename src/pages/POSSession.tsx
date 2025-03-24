@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { addOrder, products, orders, type CartItem, type Order, customers } from "@/utils/data";
+import { addOrder, products, orders, customers, paymentMethods } from "@/utils/data";
 import { toast } from "sonner";
 import { Printer, RotateCcw } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
@@ -28,18 +28,23 @@ import RecoveryForm from "@/components/pos/RecoveryForm";
 
 const POSSession = () => {
   const navigate = useNavigate();
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
+  const [lastOrderId, setLastOrderId] = useState(null);
   
-  const filteredProducts = products.filter(
-    (product) => product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Fix: Add safety check for product filtering
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(product => 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
-  const addToCart = (product: CartItem) => {
+  const addToCart = (product) => {
+    if (!product) return;
+    
     const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
       setCart(
@@ -56,11 +61,11 @@ const POSSession = () => {
     toast.success(`${product.name} added to cart`);
   };
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = (productId) => {
     setCart(cart.filter((item) => item.id !== productId));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId, quantity) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -87,7 +92,7 @@ const POSSession = () => {
       ? customers.find(c => c.id === selectedCustomerId) 
       : null;
     
-    const newOrder: Omit<Order, "id"> = {
+    const newOrder = {
       items: [...cart],
       total: calculateTotal(),
       tax: 0, // Tax removed as per requirement
@@ -98,16 +103,21 @@ const POSSession = () => {
       paymentMethod: "cash",
     };
     
-    const order = addOrder(newOrder);
-    setLastOrderId(order.id);
-    toast.success("Order completed successfully");
-    
-    // Open print dialog automatically
-    setIsPrintDialogOpen(true);
-    
-    // Reset cart and selected customer
-    setCart([]);
-    setSelectedCustomerId("");
+    try {
+      const order = addOrder(newOrder);
+      setLastOrderId(order.id);
+      toast.success("Order completed successfully");
+      
+      // Open print dialog automatically
+      setIsPrintDialogOpen(true);
+      
+      // Reset cart and selected customer
+      setCart([]);
+      setSelectedCustomerId("");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast.error("Failed to complete order");
+    }
   };
 
   const printOrderSlips = () => {
@@ -212,12 +222,23 @@ const POSSession = () => {
     setIsPrintDialogOpen(false);
   };
 
-  const todayOrders = orders.filter(
-    (order) => 
-      new Date(order.date).toDateString() === new Date().toDateString()
-  );
+  // Fix: Using a useEffect to ensure the todayOrders calculation is correct
+  const [todayOrders, setTodayOrders] = useState([]);
+  const [totalSales, setTotalSales] = useState(0);
 
-  const totalSales = todayOrders.reduce((total, order) => total + order.total, 0);
+  useEffect(() => {
+    if (Array.isArray(orders)) {
+      const today = new Date().toDateString();
+      const filteredOrders = orders.filter(
+        (order) => new Date(order.date).toDateString() === today
+      );
+      setTodayOrders(filteredOrders);
+      setTotalSales(filteredOrders.reduce((total, order) => total + order.total, 0));
+    } else {
+      setTodayOrders([]);
+      setTotalSales(0);
+    }
+  }, [orders]);
 
   return (
     <MainLayout>
@@ -282,7 +303,7 @@ const POSSession = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">Walk-in Customer</SelectItem>
-                      {customers.map((customer) => (
+                      {Array.isArray(customers) && customers.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
                         </SelectItem>
