@@ -29,13 +29,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel 
-} from "@/components/ui/form";
 import { toast } from "sonner";
 import MainLayout from "@/components/layout/MainLayout";
 import { 
@@ -47,46 +40,15 @@ import {
   Product 
 } from "@/utils/data";
 import { useForm } from "react-hook-form";
+import ProductForm from "@/components/forms/ProductForm";
+import AddProductButton from "@/components/forms/AddProductButton";
 
 const Products = () => {
   const [productsList, setProductsList] = useState<Product[]>(products);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  
-  const addForm = useForm<Omit<Product, "id">>({
-    defaultValues: {
-      name: "",
-      price: 0,
-      image: "",
-      category: "drinks",
-      barcode: "",
-      inStock: 0,
-      description: ""
-    }
-  });
-  
-  const editForm = useForm<Product>({
-    defaultValues: selectedProduct || {
-      id: "",
-      name: "",
-      price: 0,
-      image: "",
-      category: "drinks",
-      barcode: "",
-      inStock: 0,
-      description: ""
-    }
-  });
-  
-  // Update edit form when selected product changes
-  React.useEffect(() => {
-    if (selectedProduct) {
-      editForm.reset(selectedProduct);
-    }
-  }, [selectedProduct, editForm]);
   
   const handleSearch = () => {
     if (!searchQuery) {
@@ -108,19 +70,6 @@ const Products = () => {
   React.useEffect(() => {
     handleSearch();
   }, [searchQuery, products]);
-  
-  const handleAddProduct = (data: Omit<Product, "id">) => {
-    try {
-      const newProduct = addProduct(data);
-      setProductsList([...products]);
-      toast.success(`Product "${newProduct.name}" added successfully`);
-      setIsAddDialogOpen(false);
-      addForm.reset();
-    } catch (error) {
-      toast.error("Failed to add product");
-      console.error(error);
-    }
-  };
   
   const handleEditProduct = (data: Product) => {
     if (!selectedProduct) return;
@@ -179,10 +128,7 @@ const Products = () => {
               />
             </div>
             
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+            <AddProductButton />
           </div>
         </div>
         
@@ -259,132 +205,6 @@ const Products = () => {
           </Table>
         </div>
         
-        {/* Add Product Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={addForm.handleSubmit(handleAddProduct)}>
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Product name" 
-                        {...addForm.register("name")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        min="0" 
-                        placeholder="0.00" 
-                        {...addForm.register("price", { 
-                          valueAsNumber: true 
-                        })} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Stock</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        placeholder="0" 
-                        {...addForm.register("inStock", { 
-                          valueAsNumber: true 
-                        })} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/image.jpg" 
-                        {...addForm.register("image")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <select 
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        {...addForm.register("category")}
-                      >
-                        {categories
-                          .filter(category => category.id !== 'all')
-                          .map(category => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))
-                        }
-                      </select>
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Barcode</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Optional" 
-                        {...addForm.register("barcode")} 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Optional" 
-                        {...addForm.register("description")} 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Add Product</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-        
         {/* Edit Product Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="sm:max-w-[550px]">
@@ -392,122 +212,13 @@ const Products = () => {
               <DialogTitle>Edit Product</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={editForm.handleSubmit(handleEditProduct)}>
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Product name" 
-                        {...editForm.register("name")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Price</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01" 
-                        min="0" 
-                        placeholder="0.00" 
-                        {...editForm.register("price", { 
-                          valueAsNumber: true 
-                        })} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Stock</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
-                        placeholder="0" 
-                        {...editForm.register("inStock", { 
-                          valueAsNumber: true 
-                        })} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Image URL</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="https://example.com/image.jpg" 
-                        {...editForm.register("image")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <select 
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        {...editForm.register("category")}
-                      >
-                        {categories
-                          .filter(category => category.id !== 'all')
-                          .map(category => (
-                            <option key={category.id} value={category.id}>
-                              {category.name}
-                            </option>
-                          ))
-                        }
-                      </select>
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Barcode</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Optional" 
-                        {...editForm.register("barcode")} 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Optional" 
-                        {...editForm.register("description")} 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
+            {selectedProduct && (
+              <ProductForm 
+                onSubmit={handleEditProduct} 
+                initialData={selectedProduct} 
+                buttonText="Save Changes" 
+              />
+            )}
           </DialogContent>
         </Dialog>
         
