@@ -42,7 +42,7 @@ const orderSchema = z.object({
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 interface OrderFormProps {
-  onSubmit: (data: OrderFormValues & { items: CartItem[], total: number, tax: number }) => void;
+  onSubmit: (data: OrderFormValues & { items: CartItem[], total: number }) => void;
   initialData?: Partial<Order>;
   buttonText?: string;
 }
@@ -108,10 +108,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const calculateTax = () => {
-    return calculateTotal() * 0.1; // 10% tax
-  };
-
   const handleSubmit = (values: OrderFormValues) => {
     if (cart.length === 0) {
       toast.error("Please add at least one product to the order");
@@ -123,8 +119,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
     onSubmit({
       ...values,
       items: cart,
-      total: calculateTotal() + calculateTax(),
-      tax: calculateTax(),
+      total: calculateTotal(),
       customerName: selectedCustomer?.name || values.customerName || "Guest",
     });
   };
@@ -289,17 +284,9 @@ const OrderForm: React.FC<OrderFormProps> = ({
                 )}
               </div>
               <div className="mt-4 space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span>${calculateTotal().toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Tax (10%)</span>
-                  <span>${calculateTax().toFixed(2)}</span>
-                </div>
                 <div className="flex justify-between font-bold">
                   <span>Total</span>
-                  <span>${(calculateTotal() + calculateTax()).toFixed(2)}</span>
+                  <span>${calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
             </div>

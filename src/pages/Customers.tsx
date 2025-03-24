@@ -1,20 +1,41 @@
 
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import { customers } from "@/utils/data";
+import { customers, orders } from "@/utils/data";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import AddCustomerButton from "@/components/forms/AddCustomerButton";
+import CustomerBalance from "@/components/customers/CustomerBalance";
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [customersList, setCustomersList] = useState([]);
+  const [customerBalances, setCustomerBalances] = useState<{[key: string]: number}>({});
+
+  // Calculate customer balances
+  const calculateBalances = () => {
+    const balances = {};
+    
+    // For each customer, find orders with "pending" status
+    customers.forEach(customer => {
+      const pendingOrders = orders.filter(
+        order => order.customerId === customer.id && order.status === "pending"
+      );
+      
+      // Sum the total of all pending orders
+      const balance = pendingOrders.reduce((total, order) => total + order.total, 0);
+      balances[customer.id] = balance;
+    });
+    
+    setCustomerBalances(balances);
+  };
 
   // Load customers on component mount
   const refreshCustomers = () => {
     setCustomersList([...customers]);
+    calculateBalances();
   };
   
   useEffect(() => {
@@ -80,12 +101,13 @@ const Customers = () => {
                   <TableHead>Registration Date</TableHead>
                   <TableHead>Total Orders</TableHead>
                   <TableHead>Total Spent</TableHead>
+                  <TableHead>Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {customersList.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No customers found
                     </TableCell>
                   </TableRow>
@@ -100,6 +122,9 @@ const Customers = () => {
                       </TableCell>
                       <TableCell>{customer.totalOrders}</TableCell>
                       <TableCell>${customer.totalSpent.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <CustomerBalance customer={customer} />
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

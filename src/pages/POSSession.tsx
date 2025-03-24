@@ -6,15 +6,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { addOrder, products, orders, type CartItem, type Order } from "@/utils/data";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { addOrder, products, orders, type CartItem, type Order, customers } from "@/utils/data";
 import { toast } from "sonner";
+import { Printer, RotateCcw } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
+import RecoveryForm from "@/components/pos/RecoveryForm";
 
 const POSSession = () => {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
+  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   
   const filteredProducts = products.filter(
     (product) => product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -58,29 +77,139 @@ const POSSession = () => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const calculateTax = () => {
-    return calculateTotal() * 0.1; // 10% tax
-  };
-
   const handleCheckout = () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
       return;
     }
     
+    const selectedCustomer = selectedCustomerId 
+      ? customers.find(c => c.id === selectedCustomerId) 
+      : null;
+    
     const newOrder: Omit<Order, "id"> = {
       items: [...cart],
-      total: calculateTotal() + calculateTax(),
-      tax: calculateTax(),
+      total: calculateTotal(),
+      tax: 0, // Tax removed as per requirement
       status: "completed",
       date: new Date(),
-      customerName: "Walk-in Customer",
+      customerId: selectedCustomer?.id,
+      customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: "cash",
     };
     
-    addOrder(newOrder);
+    const order = addOrder(newOrder);
+    setLastOrderId(order.id);
     toast.success("Order completed successfully");
+    
+    // Open print dialog automatically
+    setIsPrintDialogOpen(true);
+    
+    // Reset cart and selected customer
     setCart([]);
+    setSelectedCustomerId("");
+  };
+
+  const printOrderSlips = () => {
+    if (!lastOrderId) {
+      toast.error("No recent order to print");
+      return;
+    }
+    
+    const orderToPrint = orders.find(o => o.id === lastOrderId);
+    if (!orderToPrint) {
+      toast.error("Order not found");
+      return;
+    }
+    
+    // In a real app, you would use a library like react-to-print or send to a backend
+    // For demonstration, we'll just prepare the print content and show it in a new window
+    const printWindow = window.open('', '_blank');
+    
+    if (printWindow) {
+      const printContent = `
+        <html>
+          <head>
+            <title>Order Receipt</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
+              .receipt { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; }
+              h2 { margin-bottom: 10px; }
+              .header { text-align: center; margin-bottom: 20px; }
+              .items { margin: 15px 0; }
+              .item { margin-bottom: 5px; }
+              .total { font-weight: bold; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
+              .footer { margin-top: 15px; text-align: center; font-size: 12px; }
+            </style>
+          </head>
+          <body>
+            <!-- First Copy - For Customer -->
+            <div class="receipt">
+              <div class="header">
+                <h2>POS System</h2>
+                <p>Order #${orderToPrint.id.split('-')[1]}</p>
+                <p>Date: ${new Date(orderToPrint.date).toLocaleString()}</p>
+                <p>Customer: ${orderToPrint.customerName}</p>
+              </div>
+              <div class="items">
+                <p><strong>Items:</strong></p>
+                ${orderToPrint.items.map(item => `
+                  <div class="item">
+                    ${item.name} x ${item.quantity} = $${(item.price * item.quantity).toFixed(2)}
+                  </div>
+                `).join('')}
+              </div>
+              <div class="total">
+                <p>Total: $${orderToPrint.total.toFixed(2)}</p>
+              </div>
+              <div class="footer">
+                <p>Thank you for your purchase!</p>
+                <p>CUSTOMER COPY</p>
+              </div>
+            </div>
+            
+            <!-- Second Copy - For Merchant -->
+            <div class="receipt">
+              <div class="header">
+                <h2>POS System</h2>
+                <p>Order #${orderToPrint.id.split('-')[1]}</p>
+                <p>Date: ${new Date(orderToPrint.date).toLocaleString()}</p>
+                <p>Customer: ${orderToPrint.customerName}</p>
+              </div>
+              <div class="items">
+                <p><strong>Items:</strong></p>
+                ${orderToPrint.items.map(item => `
+                  <div class="item">
+                    ${item.name} x ${item.quantity} = $${(item.price * item.quantity).toFixed(2)}
+                  </div>
+                `).join('')}
+              </div>
+              <div class="total">
+                <p>Total: $${orderToPrint.total.toFixed(2)}</p>
+              </div>
+              <div class="footer">
+                <p>Thank you for your purchase!</p>
+                <p>MERCHANT COPY</p>
+              </div>
+            </div>
+            
+            <script>
+              window.onload = function() {
+                window.print();
+              }
+            </script>
+          </body>
+        </html>
+      `;
+      
+      printWindow.document.open();
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    } else {
+      toast.error("Unable to open print window. Please check your popup settings.");
+    }
+    
+    setIsPrintDialogOpen(false);
   };
 
   const todayOrders = orders.filter(
@@ -99,6 +228,14 @@ const POSSession = () => {
             <Badge variant="outline" className="text-lg">
               Today's Sales: ${totalSales.toFixed(2)}
             </Badge>
+            <Button variant="outline" onClick={() => setIsRecoveryDialogOpen(true)}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Recovery
+            </Button>
+            <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print Last Order
+            </Button>
             <Button onClick={() => navigate("/")}>Close Session</Button>
           </div>
         </div>
@@ -135,6 +272,25 @@ const POSSession = () => {
                 <CardTitle>Cart</CardTitle>
               </CardHeader>
               <CardContent className="flex h-[calc(100%-64px)] flex-col">
+                <div className="mb-4">
+                  <label htmlFor="customer" className="block text-sm font-medium mb-1">
+                    Customer (Optional)
+                  </label>
+                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Walk-in Customer</SelectItem>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id}>
+                          {customer.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="flex-1 overflow-auto">
                   {cart.length === 0 ? (
                     <div className="flex h-full items-center justify-center">
@@ -185,17 +341,9 @@ const POSSession = () => {
                   )}
                 </div>
                 <div className="mt-4 space-y-2 border-t pt-4">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Tax (10%)</span>
-                    <span>${calculateTax().toFixed(2)}</span>
-                  </div>
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
-                    <span>${(calculateTotal() + calculateTax()).toFixed(2)}</span>
+                    <span>${calculateTotal().toFixed(2)}</span>
                   </div>
                   <Button
                     className="mt-4 w-full"
@@ -210,6 +358,40 @@ const POSSession = () => {
           </div>
         </div>
       </div>
+
+      {/* Recovery Dialog */}
+      <Dialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Payment Recovery</DialogTitle>
+          </DialogHeader>
+          <RecoveryForm onSuccess={() => setIsRecoveryDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Print Dialog */}
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Print Order Receipt</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Are you ready to print the receipt for this order?</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This will print two copies of the receipt - one for the customer and one for your records.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={printOrderSlips}>
+              <Printer className="mr-2 h-4 w-4" />
+              Print Receipt
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

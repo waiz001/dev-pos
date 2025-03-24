@@ -1,9 +1,18 @@
 
 import React, { ReactNode } from "react";
-import { BellRing, Menu, Search, User } from "lucide-react";
+import { BellRing, Menu, Search, User, LogOut, UserPlus, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -12,9 +21,16 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { currentUser, logout } = useAuth();
   
   const isActiveRoute = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -52,56 +68,84 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               >
                 <span>Dashboard</span>
               </Link>
-              <Link
-                to="/products"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActiveRoute("/products") 
-                    ? "bg-accent text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <span>Products</span>
-              </Link>
-              <Link
-                to="/orders"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActiveRoute("/orders") 
-                    ? "bg-accent text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <span>Orders</span>
-              </Link>
-              <Link
-                to="/customers"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActiveRoute("/customers") 
-                    ? "bg-accent text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <span>Customers</span>
-              </Link>
-              <Link
-                to="/reports"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActiveRoute("/reports") 
-                    ? "bg-accent text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <span>Reports</span>
-              </Link>
-              <Link
-                to="/settings"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                  isActiveRoute("/settings") 
-                    ? "bg-accent text-accent-foreground" 
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <span>Settings</span>
-              </Link>
+              
+              {currentUser?.permissions.products && (
+                <Link
+                  to="/products"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/products") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Products</span>
+                </Link>
+              )}
+              
+              {currentUser?.permissions.orders && (
+                <Link
+                  to="/orders"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/orders") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Orders</span>
+                </Link>
+              )}
+              
+              {currentUser?.permissions.customers && (
+                <Link
+                  to="/customers"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/customers") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Customers</span>
+                </Link>
+              )}
+              
+              {currentUser?.permissions.reports && (
+                <Link
+                  to="/reports"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/reports") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Reports</span>
+                </Link>
+              )}
+              
+              {currentUser?.permissions.settings && (
+                <Link
+                  to="/settings"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/settings") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Settings</span>
+                </Link>
+              )}
+              
+              {currentUser?.permissions.users && (
+                <Link
+                  to="/users"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/users") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>Users</span>
+                </Link>
+              )}
             </nav>
           </div>
         </div>
@@ -134,9 +178,49 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <Button variant="ghost" size="icon">
                 <BellRing className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative h-8 w-8 rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{currentUser?.name}</p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {currentUser?.username}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground capitalize">
+                        {currentUser?.role}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {currentUser?.permissions.users && (
+                    <DropdownMenuItem onClick={() => navigate('/users')}>
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Manage Users</span>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {currentUser?.permissions.settings && (
+                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
