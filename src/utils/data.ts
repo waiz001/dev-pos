@@ -243,58 +243,13 @@ const defaultCustomers: Customer[] = [
   }
 ];
 
-// Helper functions to load and save data
-const loadData = <T>(key: string, defaultValue: T[]): T[] => {
-  try {
-    const storedData = localStorage.getItem(key);
-    if (storedData) {
-      const parsed = JSON.parse(storedData);
-      // Handle Date objects that were serialized to strings
-      if (key === 'customers') {
-        return parsed.map((item: any) => ({
-          ...item,
-          registrationDate: new Date(item.registrationDate)
-        }));
-      } else if (key === 'orders') {
-        return parsed.map((item: any) => ({
-          ...item,
-          date: new Date(item.date)
-        }));
-      } else if (key === 'reports') {
-        return parsed.map((item: any) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-          lastRun: item.lastRun ? new Date(item.lastRun) : undefined
-        }));
-      }
-      return parsed;
-    }
-    return defaultValue;
-  } catch (error) {
-    console.error(`Error loading ${key}:`, error);
-    return defaultValue;
-  }
-};
-
-const saveData = <T>(key: string, data: T[]): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error(`Error saving ${key}:`, error);
-  }
-};
-
-// Load data from localStorage or use defaults
-export let products: Product[] = loadData('products', defaultProducts);
-export let customers: Customer[] = loadData('customers', defaultCustomers);
-
-// Sample orders
-export let orders: Order[] = [
+// Default sample orders
+const defaultOrders: Order[] = [
   {
     id: 'order-1',
     items: [
-      { ...products[0], quantity: 2 },
-      { ...products[2], quantity: 1 }
+      { ...defaultProducts[0], quantity: 2 },
+      { ...defaultProducts[2], quantity: 1 }
     ],
     total: 11.99,
     tax: 1.20,
@@ -308,8 +263,8 @@ export let orders: Order[] = [
   {
     id: 'order-2',
     items: [
-      { ...products[1], quantity: 1 },
-      { ...products[3], quantity: 2 }
+      { ...defaultProducts[1], quantity: 1 },
+      { ...defaultProducts[3], quantity: 2 }
     ],
     total: 13.47,
     tax: 1.35,
@@ -323,7 +278,7 @@ export let orders: Order[] = [
   {
     id: 'order-3',
     items: [
-      { ...products[4], quantity: 1 }
+      { ...defaultProducts[4], quantity: 1 }
     ],
     total: 5.99,
     tax: 0.60,
@@ -337,8 +292,8 @@ export let orders: Order[] = [
   {
     id: 'order-4',
     items: [
-      { ...products[2], quantity: 2 },
-      { ...products[5], quantity: 1 }
+      { ...defaultProducts[2], quantity: 2 },
+      { ...defaultProducts[5], quantity: 1 }
     ],
     total: 17.97,
     tax: 1.80,
@@ -352,8 +307,8 @@ export let orders: Order[] = [
   {
     id: 'order-5',
     items: [
-      { ...products[6], quantity: 1 },
-      { ...products[7], quantity: 2 }
+      { ...defaultProducts[6], quantity: 1 },
+      { ...defaultProducts[7], quantity: 2 }
     ],
     total: 12.00,
     tax: 1.20,
@@ -365,8 +320,8 @@ export let orders: Order[] = [
   }
 ];
 
-// Sample reports
-export let reports: Report[] = [
+// Default sample reports
+const defaultReports: Report[] = [
   {
     id: 'report-1',
     name: 'Monthly Sales Report',
@@ -412,8 +367,8 @@ export let reports: Report[] = [
   }
 ];
 
-// Sample settings
-export let settings: Setting[] = [
+// Default sample settings
+const defaultSettings: Setting[] = [
   {
     id: 'setting-1',
     name: 'Store Name',
@@ -451,10 +406,53 @@ export let settings: Setting[] = [
   }
 ];
 
-// Load orders, reports, and settings from localStorage or use defaults
-export let orders: Order[] = loadData('orders', []);
-export let reports: Report[] = loadData('reports', []);
-export let settings: Setting[] = loadData('settings', []);
+// Helper functions to load and save data
+const loadData = <T>(key: string, defaultValue: T[]): T[] => {
+  try {
+    const storedData = localStorage.getItem(key);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      // Handle Date objects that were serialized to strings
+      if (key === 'customers') {
+        return parsed.map((item: any) => ({
+          ...item,
+          registrationDate: new Date(item.registrationDate)
+        }));
+      } else if (key === 'orders') {
+        return parsed.map((item: any) => ({
+          ...item,
+          date: new Date(item.date)
+        }));
+      } else if (key === 'reports') {
+        return parsed.map((item: any) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+          lastRun: item.lastRun ? new Date(item.lastRun) : undefined
+        }));
+      }
+      return parsed;
+    }
+    return defaultValue;
+  } catch (error) {
+    console.error(`Error loading ${key}:`, error);
+    return defaultValue;
+  }
+};
+
+const saveData = <T>(key: string, data: T[]): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Error saving ${key}:`, error);
+  }
+};
+
+// Load data from localStorage or use defaults
+export let products: Product[] = loadData('products', defaultProducts);
+export let customers: Customer[] = loadData('customers', defaultCustomers);
+export let orders: Order[] = loadData('orders', defaultOrders);
+export let reports: Report[] = loadData('reports', defaultReports);
+export let settings: Setting[] = loadData('settings', defaultSettings);
 
 // Payment methods
 export const paymentMethods = [
