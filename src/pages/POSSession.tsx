@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { addOrder, products, orders, type CartItem, type Order } from "@/utils/data";
 import { toast } from "sonner";
 import ProductGrid from "@/components/pos/ProductGrid";
+import AddProductButton from "@/components/forms/AddProductButton";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -107,7 +108,10 @@ const POSSession = () => {
           <div className="col-span-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Products</CardTitle>
+                <div className="flex items-center gap-4">
+                  <CardTitle>Products</CardTitle>
+                  <AddProductButton />
+                </div>
                 <Input
                   placeholder="Search products..."
                   value={searchQuery}
