@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -34,6 +33,7 @@ import { toast } from "sonner";
 
 const orderSchema = z.object({
   customerId: z.string().optional(),
+  customerName: z.string().optional(),
   paymentMethod: z.string(),
   notes: z.string().optional(),
 });
@@ -58,6 +58,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
     resolver: zodResolver(orderSchema),
     defaultValues: {
       customerId: initialData.customerId || "",
+      customerName: initialData.customerName || "",
       paymentMethod: initialData.paymentMethod || "cash",
       notes: initialData.notes || "",
     },
