@@ -74,8 +74,8 @@ export const categories: Category[] = [
   { id: 'clothing', name: 'Clothing' }
 ];
 
-// Sample products
-export let products: Product[] = [
+// Default sample data
+const defaultProducts: Product[] = [
   {
     id: 'product-1',
     name: 'Espresso',
@@ -186,8 +186,7 @@ export let products: Product[] = [
   }
 ];
 
-// Sample customers
-export let customers: Customer[] = [
+const defaultCustomers: Customer[] = [
   {
     id: 'customer-1',
     name: 'John Doe',
@@ -243,6 +242,51 @@ export let customers: Customer[] = [
     notes: 'Prefers pickup over delivery'
   }
 ];
+
+// Helper functions to load and save data
+const loadData = <T>(key: string, defaultValue: T[]): T[] => {
+  try {
+    const storedData = localStorage.getItem(key);
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      // Handle Date objects that were serialized to strings
+      if (key === 'customers') {
+        return parsed.map((item: any) => ({
+          ...item,
+          registrationDate: new Date(item.registrationDate)
+        }));
+      } else if (key === 'orders') {
+        return parsed.map((item: any) => ({
+          ...item,
+          date: new Date(item.date)
+        }));
+      } else if (key === 'reports') {
+        return parsed.map((item: any) => ({
+          ...item,
+          createdAt: new Date(item.createdAt),
+          lastRun: item.lastRun ? new Date(item.lastRun) : undefined
+        }));
+      }
+      return parsed;
+    }
+    return defaultValue;
+  } catch (error) {
+    console.error(`Error loading ${key}:`, error);
+    return defaultValue;
+  }
+};
+
+const saveData = <T>(key: string, data: T[]): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Error saving ${key}:`, error);
+  }
+};
+
+// Load data from localStorage or use defaults
+export let products: Product[] = loadData('products', defaultProducts);
+export let customers: Customer[] = loadData('customers', defaultCustomers);
 
 // Sample orders
 export let orders: Order[] = [
@@ -407,6 +451,11 @@ export let settings: Setting[] = [
   }
 ];
 
+// Load orders, reports, and settings from localStorage or use defaults
+export let orders: Order[] = loadData('orders', []);
+export let reports: Report[] = loadData('reports', []);
+export let settings: Setting[] = loadData('settings', []);
+
 // Payment methods
 export const paymentMethods = [
   { id: 'cash', name: 'Cash' },
@@ -423,6 +472,7 @@ export const addProduct = (product: Omit<Product, 'id'>): Product => {
   };
   
   products = [...products, newProduct];
+  saveData('products', products);
   return newProduct;
 };
 
@@ -438,13 +488,20 @@ export const updateProduct = (id: string, updates: Partial<Product>): Product | 
     ...products.slice(index + 1)
   ];
   
+  saveData('products', products);
   return updatedProduct;
 };
 
 export const deleteProduct = (id: string): boolean => {
   const initialLength = products.length;
   products = products.filter(p => p.id !== id);
-  return products.length < initialLength;
+  const success = products.length < initialLength;
+  
+  if (success) {
+    saveData('products', products);
+  }
+  
+  return success;
 };
 
 export const getProductById = (id: string): Product | undefined => {
@@ -459,6 +516,7 @@ export const addCustomer = (customer: Omit<Customer, 'id'>): Customer => {
   };
   
   customers = [...customers, newCustomer];
+  saveData('customers', customers);
   return newCustomer;
 };
 
@@ -474,13 +532,20 @@ export const updateCustomer = (id: string, updates: Partial<Customer>): Customer
     ...customers.slice(index + 1)
   ];
   
+  saveData('customers', customers);
   return updatedCustomer;
 };
 
 export const deleteCustomer = (id: string): boolean => {
   const initialLength = customers.length;
   customers = customers.filter(c => c.id !== id);
-  return customers.length < initialLength;
+  const success = customers.length < initialLength;
+  
+  if (success) {
+    saveData('customers', customers);
+  }
+  
+  return success;
 };
 
 export const getCustomerById = (id: string): Customer | undefined => {
@@ -495,6 +560,7 @@ export const addOrder = (order: Omit<Order, 'id'>): Order => {
   };
   
   orders = [...orders, newOrder];
+  saveData('orders', orders);
   return newOrder;
 };
 
@@ -510,13 +576,20 @@ export const updateOrder = (id: string, updates: Partial<Order>): Order | null =
     ...orders.slice(index + 1)
   ];
   
+  saveData('orders', orders);
   return updatedOrder;
 };
 
 export const deleteOrder = (id: string): boolean => {
   const initialLength = orders.length;
   orders = orders.filter(o => o.id !== id);
-  return orders.length < initialLength;
+  const success = orders.length < initialLength;
+  
+  if (success) {
+    saveData('orders', orders);
+  }
+  
+  return success;
 };
 
 export const getOrderById = (id: string): Order | undefined => {
@@ -531,6 +604,7 @@ export const addReport = (report: Omit<Report, 'id'>): Report => {
   };
   
   reports = [...reports, newReport];
+  saveData('reports', reports);
   return newReport;
 };
 
@@ -546,13 +620,20 @@ export const updateReport = (id: string, updates: Partial<Report>): Report | nul
     ...reports.slice(index + 1)
   ];
   
+  saveData('reports', reports);
   return updatedReport;
 };
 
 export const deleteReport = (id: string): boolean => {
   const initialLength = reports.length;
   reports = reports.filter(r => r.id !== id);
-  return reports.length < initialLength;
+  const success = reports.length < initialLength;
+  
+  if (success) {
+    saveData('reports', reports);
+  }
+  
+  return success;
 };
 
 export const getReportById = (id: string): Report | undefined => {
@@ -572,6 +653,7 @@ export const updateSetting = (id: string, value: string): Setting | null => {
     ...settings.slice(index + 1)
   ];
   
+  saveData('settings', settings);
   return updatedSetting;
 };
 
@@ -582,4 +664,3 @@ export const getSettingByName = (name: string): Setting | undefined => {
 export const getSettingsByCategory = (category: Setting['category']): Setting[] => {
   return settings.filter(s => s.category === category);
 };
-

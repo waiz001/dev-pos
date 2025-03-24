@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { customers } from "@/utils/data";
 import { Search } from "lucide-react";
@@ -10,9 +10,31 @@ import AddCustomerButton from "@/components/forms/AddCustomerButton";
 
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [customersList, setCustomersList] = useState(customers);
+  const [customersList, setCustomersList] = useState([]);
+
+  // Load customers on component mount
+  const refreshCustomers = () => {
+    setCustomersList([...customers]);
+  };
+  
+  useEffect(() => {
+    refreshCustomers();
+    
+    // Listen for customer updates
+    const handleCustomerUpdate = () => refreshCustomers();
+    window.addEventListener('customer-updated', handleCustomerUpdate);
+    
+    return () => {
+      window.removeEventListener('customer-updated', handleCustomerUpdate);
+    };
+  }, []);
 
   const handleSearch = () => {
+    if (!searchQuery) {
+      refreshCustomers();
+      return;
+    }
+    
     const filtered = customers.filter(customer =>
       customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -21,7 +43,7 @@ const Customers = () => {
     setCustomersList(filtered);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     handleSearch();
   }, [searchQuery]);
 

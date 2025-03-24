@@ -27,6 +27,9 @@ const AddCustomerButton = () => {
       addCustomer(newCustomer);
       setIsOpen(false);
       toast.success(`Customer "${data.name}" added successfully`);
+      
+      // Force a rerender of the customers page by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('customer-updated'));
     } catch (error) {
       toast.error("Failed to add customer");
       console.error(error);

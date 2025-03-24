@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { PlusCircle, Edit, Trash2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,15 +44,32 @@ import ProductForm from "@/components/forms/ProductForm";
 import AddProductButton from "@/components/forms/AddProductButton";
 
 const Products = () => {
-  const [productsList, setProductsList] = useState<Product[]>(products);
+  const [productsList, setProductsList] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
+  // Load the products list
+  const refreshProducts = () => {
+    setProductsList([...products]);
+  };
+  
+  useEffect(() => {
+    refreshProducts();
+    
+    // Listen for product updates
+    const handleProductUpdate = () => refreshProducts();
+    window.addEventListener('product-updated', handleProductUpdate);
+    
+    return () => {
+      window.removeEventListener('product-updated', handleProductUpdate);
+    };
+  }, []);
+  
   const handleSearch = () => {
     if (!searchQuery) {
-      setProductsList(products);
+      refreshProducts();
       return;
     }
     
@@ -67,9 +84,9 @@ const Products = () => {
   };
   
   // Search products when query changes
-  React.useEffect(() => {
+  useEffect(() => {
     handleSearch();
-  }, [searchQuery, products]);
+  }, [searchQuery]);
   
   const handleEditProduct = (data: Product) => {
     if (!selectedProduct) return;
@@ -77,7 +94,7 @@ const Products = () => {
     try {
       const updated = updateProduct(selectedProduct.id, data);
       if (updated) {
-        setProductsList([...products]);
+        refreshProducts();
         toast.success(`Product "${updated.name}" updated successfully`);
         setIsEditDialogOpen(false);
         setSelectedProduct(null);
@@ -96,7 +113,7 @@ const Products = () => {
     try {
       const deleted = deleteProduct(selectedProduct.id);
       if (deleted) {
-        setProductsList([...products]);
+        refreshProducts();
         toast.success(`Product deleted successfully`);
       } else {
         toast.error("Product not found");

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import ProductForm from "./ProductForm";
-import { addProduct } from "@/utils/data";
+import { addProduct, products } from "@/utils/data";
 import { toast } from "sonner";
 
 const AddProductButton = () => {
@@ -17,9 +17,12 @@ const AddProductButton = () => {
 
   const handleAddProduct = (data: any) => {
     try {
-      addProduct(data);
+      const newProduct = addProduct(data);
       setIsOpen(false);
-      toast.success(`Product "${data.name}" added successfully`);
+      toast.success(`Product "${newProduct.name}" added successfully`);
+      
+      // Force a rerender of the products page by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('product-updated'));
     } catch (error) {
       toast.error("Failed to add product");
       console.error(error);
