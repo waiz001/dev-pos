@@ -1,160 +1,248 @@
 
-import React, { useState, useEffect } from "react";
-import { SearchIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import React from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import CategoryFilter from "@/components/pos/CategoryFilter";
-import ProductGrid from "@/components/pos/ProductGrid";
-import Cart from "@/components/pos/Cart";
-import Checkout from "@/components/pos/Checkout";
-import { Product, CartItem, categories, products } from "@/utils/data";
-import { toast } from "sonner";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
+import { 
+  products, 
+  orders, 
+  customers,
+  Order
+} from "@/utils/data";
+
+const salesData = [
+  { name: 'Jan', total: 1500 },
+  { name: 'Feb', total: 2300 },
+  { name: 'Mar', total: 1800 },
+  { name: 'Apr', total: 2400 },
+  { name: 'May', total: 3100 },
+  { name: 'Jun', total: 2900 },
+  { name: 'Jul', total: 3800 },
+];
+
+const categoryData = [
+  { name: 'Drinks', value: 40 },
+  { name: 'Food', value: 30 },
+  { name: 'Desserts', value: 15 },
+  { name: 'Electronics', value: 10 },
+  { name: 'Clothing', value: 5 },
+];
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+// Count orders by status
+const ordersByStatus = (orders: Order[]) => {
+  const statusCount = { pending: 0, completed: 0, cancelled: 0 };
+  
+  orders.forEach(order => {
+    statusCount[order.status]++;
+  });
+  
+  return Object.entries(statusCount).map(([name, value]) => ({ 
+    name: name.charAt(0).toUpperCase() + name.slice(1), 
+    value 
+  }));
+};
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-
-  // Filter products based on selected category and search query
-  useEffect(() => {
-    let filtered = products;
-    
-    // Filter by category
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(product => 
-        product.name.toLowerCase().includes(query) || 
-        product.category.toLowerCase().includes(query)
-      );
-    }
-    
-    setFilteredProducts(filtered);
-  }, [selectedCategory, searchQuery]);
-
-  // Handle adding product to cart
-  const handleAddToCart = (product: Product) => {
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        // Increase quantity if item already in cart
-        return prevItems.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      } else {
-        // Add new item to cart
-        return [...prevItems, { ...product, quantity: 1 }];
-      }
-    });
-    
-    toast.success(`Added ${product.name} to cart`);
-  };
-
-  // Handle updating item quantity in cart
-  const handleUpdateQuantity = (itemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      handleRemoveItem(itemId);
-      return;
-    }
-    
-    setCartItems(prevItems => 
-      prevItems.map(item => 
-        item.id === itemId ? { ...item, quantity } : item
-      )
-    );
-  };
-
-  // Handle removing item from cart
-  const handleRemoveItem = (itemId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
-  };
-
-  // Handle clearing all items from cart
-  const handleClearCart = () => {
-    setCartItems([]);
-    toast.info("Cart cleared");
-  };
-
-  // Handle checkout process
-  const handleCheckout = () => {
-    setIsCheckoutOpen(true);
-  };
-
-  // Handle completing order
-  const handleCompleteOrder = () => {
-    // Here you would typically save the order to a database
-    setIsCheckoutOpen(false);
-    setCartItems([]);
-    toast.success("Order completed successfully!");
-  };
-
+  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalProducts = products.length;
+  const totalCustomers = customers.length;
+  const totalOrders = orders.length;
+  const pendingOrders = orders.filter(order => order.status === 'pending').length;
+  
   return (
     <MainLayout>
-      <div className="flex h-[calc(100vh-7rem)] flex-col gap-6 lg:flex-row">
-        {/* Products section */}
-        <div className="flex-1 overflow-hidden">
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Point of Sale</h1>
-            <div className="relative w-64">
-              <SearchIcon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <CategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
-
-          <div className="h-[calc(100%-8rem)] overflow-y-auto pr-2">
-            {filteredProducts.length === 0 ? (
-              <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
-                <p className="text-muted-foreground">No products found</p>
-              </div>
-            ) : (
-              <ProductGrid
-                products={filteredProducts}
-                onAddToCart={handleAddToCart}
-              />
-            )}
-          </div>
+      <div className="p-6">
+        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        
+        {/* Summary Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${totalRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">+12.5% from last month</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Orders</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalOrders}</div>
+              <p className="text-xs text-muted-foreground mt-1">{pendingOrders} pending</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Customers</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalCustomers}</div>
+              <p className="text-xs text-muted-foreground mt-1">+4.3% from last month</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{totalProducts}</div>
+              <p className="text-xs text-muted-foreground mt-1">Across {categoryData.length} categories</p>
+            </CardContent>
+          </Card>
         </div>
-
-        {/* Cart section */}
-        <div className="w-full lg:w-[350px]">
-          <Cart
-            items={cartItems}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-            onClearCart={handleClearCart}
-            onCheckout={handleCheckout}
-          />
+        
+        {/* Charts */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-6">
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Monthly Revenue</CardTitle>
+              <CardDescription>Revenue trends over the past 7 months</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={salesData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="total" fill="#8884d8" name="Revenue ($)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Categories</CardTitle>
+              <CardDescription>Distribution by category</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {categoryData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle>Order Status</CardTitle>
+              <CardDescription>Current orders by status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={ordersByStatus(orders)}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {ordersByStatus(orders).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>Customer Growth</CardTitle>
+              <CardDescription>New customers over time</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={[
+                      { month: 'Jan', customers: 20 },
+                      { month: 'Feb', customers: 25 },
+                      { month: 'Mar', customers: 30 },
+                      { month: 'Apr', customers: 40 },
+                      { month: 'May', customers: 45 },
+                      { month: 'Jun', customers: 55 },
+                      { month: 'Jul', customers: 65 },
+                    ]}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="customers" 
+                      stroke="#8884d8" 
+                      activeDot={{ r: 8 }} 
+                      name="New Customers"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Checkout dialog */}
-      <Checkout
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        items={cartItems}
-        onConfirm={handleCompleteOrder}
-      />
     </MainLayout>
   );
 };
