@@ -1,267 +1,175 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { products, deleteProduct, categories } from "@/utils/data";
-import { FileDown, FileUp, Pencil, Trash } from "lucide-react";
-import { toast } from "sonner";
-import AddProductButton from "@/components/forms/AddProductButton";
-import ProductForm from "@/components/forms/ProductForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { 
-  downloadProductsTemplate, 
-  exportProductsToExcel 
-} from "@/utils/excelUtils";
+  products as allProducts, 
+  deleteProduct as deleteProductData,
+  addProduct as addProductData,
+  updateProduct as updateProductData,
+  categories
+} from "@/utils/data";
+import { toast } from "sonner";
+import { PlusCircle, Pencil, Trash2, FileDown, FileUp } from "lucide-react";
+import ProductForm from "@/components/forms/ProductForm";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
-// Wrapper component to handle the ProductForm props
-export const ProductFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
-  const handleSubmit = (data: any) => {
-    if (initialData?.id) {
-      // Update existing product
-      updateProduct(initialData.id, data);
-      toast.success("Product updated successfully");
-    } else {
-      // Add new product
-      addProduct({
-        ...data,
-        createdAt: new Date(),
-      });
-      toast.success("Product added successfully");
-    }
-    
-    if (onSuccess) {
-      onSuccess();
+// Create wrapper components to handle the props mismatch
+const ProductFormWrapper = ({ initialData, onSuccess }) => {
+  const onSubmit = (formData) => {
+    try {
+      if (initialData) {
+        updateProductData(initialData.id, formData);
+        toast.success("Product updated successfully");
+      } else {
+        addProductData(formData);
+        toast.success("Product added successfully");
+      }
+      
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Error submitting product form:", error);
+      toast.error("Failed to save product");
     }
   };
 
-  return <ProductForm initialData={initialData} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Product" : "Add Product"} />;
+  return <ProductForm initialData={initialData} onSubmit={onSubmit} />;
 };
 
 const Products = () => {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState(allProducts);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
+  useEffect(() => {
+    setProducts(allProducts);
+  }, []);
+
   const filteredProducts = useMemo(() => {
-    let filtered = [...products];
-    
-    if (searchQuery) {
-      filtered = filtered.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-    
-    return filtered;
-  }, [products, searchQuery, selectedCategory]);
+    return products.filter((product) =>
+      product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [products, searchQuery]);
 
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-    setIsDialogOpen(true);
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => {
+    setOpen(false);
+    setEditProduct(null);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      const success = deleteProduct(id);
-      if (success) {
-        toast.success("Product deleted successfully");
-      } else {
-        toast.error("Failed to delete product");
-      }
+  const handleDelete = (id: string) => {
+    try {
+      deleteProductData(id);
+      setProducts(allProducts);
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error("Failed to delete product");
     }
   };
 
-  const handleProductTemplateDownload = () => {
-    downloadProductsTemplate();
-    toast.success("Product template downloaded");
-  };
-
-  const handleImportProducts = () => {
-    setIsImportDialogOpen(true);
-  };
-
-  const handleExportProducts = () => {
-    exportProductsToExcel();
-    toast.success("Products exported to Excel");
+  const handleEdit = (product: any) => {
+    setEditProduct(product);
+    handleOpen();
   };
 
   return (
     <MainLayout>
-      <div className="p-6">
-        <div className="mb-6 flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold">Products</h1>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleProductTemplateDownload}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Download Template
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleImportProducts}>
-                <FileUp className="mr-2 h-4 w-4" />
-                Import Products
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleExportProducts}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Export Products
-              </Button>
-              <AddProductButton />
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
+      <div className="container mx-auto py-10">
+        <div className="mb-6 flex justify-between">
+          <h1 className="text-3xl font-bold">Products</h1>
+          <div className="flex items-center space-x-4">
             <Input
+              type="text"
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
+              className="max-w-md"
             />
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge
-                variant={selectedCategory === "all" ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => setSelectedCategory("all")}
-              >
-                All Products
-              </Badge>
-              {categories.slice(1).map((category) => (
-                <Badge
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  {category.name}
-                </Badge>
-              ))}
-            </div>
+            <Button onClick={() => setIsImportDialogOpen(true)}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Excel
+            </Button>
+            <Button onClick={handleOpen}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Product Inventory</CardTitle>
-            <CardDescription>
-              Manage your product catalog and inventory levels
-            </CardDescription>
+            <CardTitle>Product List</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>In Stock</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProducts.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center">
-                      No products found
+                {filteredProducts.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell>{categories.find(cat => cat.id === product.category)?.name || 'N/A'}</TableCell>
+                    <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>{product.inStock}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => handleDelete(product.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredProducts.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-10 w-10 rounded object-cover"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell>
-                        {categories.find(c => c.id === product.category)?.name || product.category}
-                      </TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={product.inStock > 10 ? "outline" : "destructive"}
-                        >
-                          {product.inStock}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEdit(product)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(product.id)}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-      </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-          </DialogHeader>
-          {editingProduct && (
-            <ProductFormWrapper initialData={editingProduct} onSuccess={() => setIsDialogOpen(false)} />
-          )}
-        </DialogContent>
-      </Dialog>
-      
-      <ImportExcelDialog
-        open={isImportDialogOpen}
-        onOpenChange={setIsImportDialogOpen}
-        type="products"
-        onImportComplete={() => {
-          setIsImportDialogOpen(false);
-          setSearchQuery("");
-        }}
-      />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>{editProduct ? "Edit Product" : "Add Product"}</DialogTitle>
+              <DialogDescription>
+                {editProduct ? "Edit product details." : "Create a new product."}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <ProductFormWrapper
+                initialData={editProduct}
+                onSuccess={handleClose}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+        
+        <ImportExcelDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          onImportComplete={() => {
+            setProducts(allProducts);
+          }}
+        />
+      </div>
     </MainLayout>
   );
 };

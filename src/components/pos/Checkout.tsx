@@ -39,8 +39,18 @@ const Checkout: React.FC<CheckoutProps> = ({
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
-      toast.success("Payment successful!");
-      onConfirm();
+      try {
+        // Call onConfirm after successfully processing payment, but handle any potential errors
+        onConfirm();
+        toast.success("Payment successful!", {
+          position: "bottom-center"
+        });
+      } catch (error) {
+        console.error("Error during order confirmation:", error);
+        toast.error("Failed to complete order", {
+          position: "bottom-center"
+        });
+      }
     }, 1500);
   };
 
