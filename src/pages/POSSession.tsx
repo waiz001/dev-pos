@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -34,6 +35,7 @@ const POSSession = () => {
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("guest");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
@@ -106,7 +108,7 @@ const POSSession = () => {
       date: new Date(),
       customerId: selectedCustomer?.id || "",
       customerName: selectedCustomer?.name || "Walk-in Customer",
-      paymentMethod: "cash",
+      paymentMethod: selectedPaymentMethod,
     };
     
     try {
@@ -119,6 +121,7 @@ const POSSession = () => {
       
       setCart([]);
       setSelectedCustomerId("guest");
+      setSelectedPaymentMethod("cash");
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to complete order");
@@ -139,6 +142,32 @@ const POSSession = () => {
     
     const pdfDoc = generateOrderReceiptPDF(orderToPrint);
     setPdfDocument(pdfDoc);
+  };
+  
+  const printSlip = () => {
+    if (cart.length === 0) {
+      toast.error("Please add items to cart first");
+      return;
+    }
+    
+    // Create a temporary order object for printing
+    const selectedCustomer = selectedCustomerId !== "guest"
+      ? customers.find(c => c.id === selectedCustomerId) 
+      : null;
+      
+    const tempOrder = {
+      id: "preview-" + Date.now(),
+      date: new Date(),
+      items: cart,
+      total: calculateTotal(),
+      customerName: selectedCustomer?.name || "Walk-in Customer",
+      paymentMethod: selectedPaymentMethod,
+      status: "pending" as "pending" | "completed" | "cancelled",
+    };
+    
+    const pdfDoc = generateOrderReceiptPDF(tempOrder);
+    setPdfDocument(pdfDoc);
+    setIsPrintDialogOpen(true);
   };
 
   const generateDailySalesReport = () => {
@@ -300,23 +329,43 @@ const POSSession = () => {
                 <CardTitle>Cart</CardTitle>
               </CardHeader>
               <CardContent className="flex h-[calc(100%-64px)] flex-col">
-                <div className="mb-4">
-                  <label htmlFor="customer" className="block text-sm font-medium mb-1">
-                    Customer (Optional)
-                  </label>
-                  <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="guest">Walk-in Customer</SelectItem>
-                      {Array.isArray(customers) && customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="mb-4 space-y-4">
+                  <div>
+                    <label htmlFor="customer" className="block text-sm font-medium mb-1">
+                      Customer (Optional)
+                    </label>
+                    <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a customer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="guest">Walk-in Customer</SelectItem>
+                        {Array.isArray(customers) && customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="paymentMethod" className="block text-sm font-medium mb-1">
+                      Payment Method
+                    </label>
+                    <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(paymentMethods) && paymentMethods.map((method) => (
+                          <SelectItem key={method.id} value={method.id}>
+                            {method.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 <div className="flex-1 overflow-auto">
@@ -373,13 +422,24 @@ const POSSession = () => {
                     <span>Total</span>
                     <span>${calculateTotal().toFixed(2)}</span>
                   </div>
-                  <Button
-                    className="mt-4 w-full"
-                    onClick={handleCheckout}
-                    disabled={cart.length === 0}
-                  >
-                    Complete Sale
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      className="mt-4"
+                      variant="outline"
+                      onClick={printSlip}
+                      disabled={cart.length === 0}
+                    >
+                      <Printer className="mr-2 h-4 w-4" />
+                      Print Slip
+                    </Button>
+                    <Button
+                      className="mt-4 flex-1"
+                      onClick={handleCheckout}
+                      disabled={cart.length === 0}
+                    >
+                      Complete Sale
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

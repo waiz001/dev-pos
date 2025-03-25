@@ -54,7 +54,8 @@ const RecoveryForm = ({ onSuccess }) => {
         return;
       }
       
-      // Calculate new balance after recovery
+      // Calculate new balance (balance is represented as totalSpent in the data structure)
+      // We just need to reduce the totalSpent directly as totalSpent represents the balance
       const updatedTotalSpent = customer.totalSpent - data.amount;
       
       // Update customer with new totalSpent (reducing the balance)

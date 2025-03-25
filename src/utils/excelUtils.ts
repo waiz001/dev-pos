@@ -81,7 +81,8 @@ export const importProductsFromExcel = async (file: File): Promise<{
         const inStock = typeof row.inStock === 'number' ? row.inStock : parseInt(row.inStock);
         
         // Prepare product data
-        const productData = {
+        const productData: Product = {
+          id: row.id || `product-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           name: row.name,
           price: price,
           category: row.category || 'general',
@@ -130,15 +131,16 @@ export const importCustomersFromExcel = async (file: File): Promise<{
     for (const row of data) {
       try {
         // Validate required fields
-        if (!row.name || !row.email) {
-          result.errors.push(`Missing required fields for customer: ${JSON.stringify(row)}`);
+        if (!row.name) {
+          result.errors.push(`Missing required name field for customer: ${JSON.stringify(row)}`);
           continue;
         }
         
         // Prepare customer data
-        const customerData = {
+        const customerData: Customer = {
+          id: row.id || `customer-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           name: row.name,
-          email: row.email,
+          email: row.email || '',
           phone: row.phone || '',
           address: row.address || '',
           notes: row.notes || '',
@@ -150,8 +152,11 @@ export const importCustomersFromExcel = async (file: File): Promise<{
         // Update existing customer or add new one
         if (row.id) {
           // Keep existing totalOrders and totalSpent for updates
-          delete customerData.totalOrders;
-          delete customerData.totalSpent;
+          const existingCustomer = customers.find(c => c.id === row.id);
+          if (existingCustomer) {
+            customerData.totalOrders = existingCustomer.totalOrders;
+            customerData.totalSpent = existingCustomer.totalSpent;
+          }
           
           const updated = updateCustomer(row.id, customerData);
           if (updated) {
@@ -164,7 +169,7 @@ export const importCustomersFromExcel = async (file: File): Promise<{
           result.added++;
         }
       } catch (error) {
-        result.errors.push(`Error processing customer: ${row.name}, ${error.message}`);
+        result.errors.push(`Error processing customer: ${row.name || 'Unknown'}, ${error.message}`);
       }
     }
     

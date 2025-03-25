@@ -31,6 +31,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { generateOrderReceiptPDF } from "@/utils/pdfUtils";
+import { Printer } from "lucide-react";
 
 const orderSchema = z.object({
   customerId: z.string().optional(),
@@ -122,6 +124,30 @@ const OrderForm: React.FC<OrderFormProps> = ({
       total: calculateTotal(),
       customerName: selectedCustomer?.name || values.customerName || "Guest",
     });
+  };
+  
+  const printSlip = () => {
+    if (cart.length === 0) {
+      toast.error("Please add at least one product to print a slip");
+      return;
+    }
+    
+    // Create a temporary order object for printing
+    const selectedCustomer = customers.find(c => c.id === form.getValues().customerId);
+    const tempOrder = {
+      id: "preview-" + Date.now(),
+      date: new Date(),
+      items: cart,
+      total: calculateTotal(),
+      customerName: selectedCustomer?.name || form.getValues().customerName || "Guest",
+      paymentMethod: form.getValues().paymentMethod,
+      notes: form.getValues().notes || "",
+      status: "pending" as "pending" | "completed" | "cancelled",
+    };
+    
+    const pdfDoc = generateOrderReceiptPDF(tempOrder);
+    pdfDoc.output('dataurlnewwindow');
+    toast.success("Slip printed successfully");
   };
 
   return (
@@ -307,7 +333,17 @@ const OrderForm: React.FC<OrderFormProps> = ({
           )}
         />
 
-        <Button type="submit">{buttonText}</Button>
+        <div className="flex gap-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={printSlip}
+          >
+            <Printer className="mr-2 h-4 w-4" />
+            Print Slip
+          </Button>
+          <Button type="submit">{buttonText}</Button>
+        </div>
       </form>
     </Form>
   );
