@@ -98,7 +98,9 @@ const POSSession = () => {
 
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast.error("Cart is empty");
+      toast.error("Cart is empty", {
+        position: "bottom-center"
+      });
       return;
     }
     
@@ -127,32 +129,42 @@ const POSSession = () => {
         
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
-          toast.success("Order completed successfully");
+          toast.success("Order completed successfully", {
+            position: "bottom-center"
+          });
           
           generateReceipt(updatedOrder);
           setIsPrintDialogOpen(true);
         } else {
-          toast.error("Failed to update order");
+          toast.error("Failed to update order", {
+            position: "bottom-center"
+          });
         }
       } else { // Creating a new order
         const order = addOrder(orderData);
         setLastOrderId(order.id);
-        toast.success("Order completed successfully");
+        toast.success("Order completed successfully", {
+          position: "bottom-center"
+        });
         
         generateReceipt(order);
         setIsPrintDialogOpen(true);
       }
       
-      resetCart();
+      resetCart(); // This automatically starts a new order
     } catch (error) {
       console.error("Error creating order:", error);
-      toast.error("Failed to complete order");
+      toast.error("Failed to complete order", {
+        position: "bottom-center"
+      });
     }
   };
 
   const saveOrderInProgress = () => {
     if (cart.length === 0) {
-      toast.error("Cart is empty");
+      toast.error("Cart is empty", {
+        position: "bottom-center"
+      });
       return false;
     }
     
@@ -172,11 +184,15 @@ const POSSession = () => {
         paymentMethod: selectedPaymentMethod,
       });
       
-      toast.success("Order saved as in-progress");
+      toast.success("Order saved as in-progress", {
+        position: "bottom-center"
+      });
       return true;
     } catch (error) {
       console.error("Error saving in-progress order:", error);
-      toast.error("Failed to save order");
+      toast.error("Failed to save order", {
+        position: "bottom-center"
+      });
       return false;
     }
   };
@@ -213,13 +229,17 @@ const POSSession = () => {
 
   const generateReceipt = (order?: Order) => {
     if (!order && !lastOrderId) {
-      toast.error("No order to print");
+      toast.error("No order to print", {
+        position: "bottom-center"
+      });
       return;
     }
     
     const orderToPrint = order || orders.find(o => o.id === lastOrderId);
     if (!orderToPrint) {
-      toast.error("Order not found");
+      toast.error("Order not found", {
+        position: "bottom-center"
+      });
       return;
     }
     
@@ -229,7 +249,9 @@ const POSSession = () => {
   
   const printSlip = () => {
     if (cart.length === 0) {
-      toast.error("Please add items to cart first");
+      toast.error("Please add items to cart first", {
+        position: "bottom-center"
+      });
       return;
     }
     

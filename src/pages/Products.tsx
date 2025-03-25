@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -35,6 +34,17 @@ import {
   exportProductsToExcel 
 } from "@/utils/excelUtils";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
+
+// Check if ProductForm has an onSuccess prop in its interface 
+// If not, create a wrapper component
+const ProductFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
+  const handleSuccess = () => {
+    // After submission is successful, call the parent's onSuccess
+    onSuccess();
+  };
+
+  return <ProductForm initialData={initialData} />;
+};
 
 const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -225,10 +235,7 @@ const Products = () => {
             <DialogTitle>Edit Product</DialogTitle>
           </DialogHeader>
           {editingProduct && (
-            <ProductForm
-              initialData={editingProduct}
-              onSuccess={() => setIsDialogOpen(false)}
-            />
+            <ProductFormWrapper initialData={editingProduct} onSuccess={() => setIsDialogOpen(false)} />
           )}
         </DialogContent>
       </Dialog>

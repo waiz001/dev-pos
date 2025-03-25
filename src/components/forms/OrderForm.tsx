@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -148,7 +147,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       customerName: selectedCustomer?.name || form.getValues().customerName || "Guest",
       paymentMethod: form.getValues().paymentMethod,
       notes: form.getValues().notes || "",
-      status: "pending" as "pending" | "completed" | "cancelled",
+      status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
     };
     
     const pdfDoc = generateOrderReceiptPDF(tempOrder);

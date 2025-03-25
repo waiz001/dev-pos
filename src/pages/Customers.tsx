@@ -1,5 +1,5 @@
-
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,60 +10,68 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { customers, deleteCustomer } from "@/utils/data";
-import { format } from "date-fns";
-import { FileDown, FileUp, Pencil, Trash, UserPlus } from "lucide-react";
+import {
+  addCustomer,
+  customers as allCustomers,
+  Customer,
+  updateCustomer,
+  deleteCustomer as deleteCustomerData,
+} from "@/utils/data";
 import { toast } from "sonner";
+import { PlusCircle, Pencil, Trash2, User, Wallet } from "lucide-react";
 import CustomerForm from "@/components/forms/CustomerForm";
-import AddCustomerButton from "@/components/forms/AddCustomerButton";
-import CustomerBalance from "@/components/customers/CustomerBalance";
-import { 
-  downloadCustomersTemplate, 
-  exportCustomersToExcel 
-} from "@/utils/excelUtils";
-import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
+import CustomerBalance from "@/components/pos/CustomerBalance";
+
+// Create wrapper components to handle the props mismatch
+const CustomerFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
+  return <CustomerForm initialData={initialData} />;
+};
+
+const CustomerBalanceWrapper = ({ customer, onSuccess }: { customer: any, onSuccess: () => void }) => {
+  return <CustomerBalance customer={customer} />;
+};
 
 const Customers = () => {
+  const navigate = useNavigate();
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [editingCustomer, setEditingCustomer] = useState(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
-  const filteredCustomers = useMemo(() => {
-    if (!searchQuery) return customers;
-    
-    return customers.filter(customer => 
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [customers, searchQuery]);
+  useEffect(() => {
+    setCustomers(allCustomers);
+  }, []);
 
-  const handleEdit = (customer) => {
-    setEditingCustomer(customer);
-    setIsDialogOpen(true);
+  const filteredCustomers = customers.filter((customer) =>
+    customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleAddCustomer = () => {
+    setSelectedCustomer(null);
+    setIsCustomerFormOpen(true);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this customer?")) {
-      const success = deleteCustomer(id);
+  const handleEditCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsCustomerFormOpen(true);
+  };
+
+  const handleDeleteCustomer = (id: string) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this customer?");
+    if (confirmDelete) {
+      const success = deleteCustomerData(id);
       if (success) {
+        setCustomers(allCustomers);
         toast.success("Customer deleted successfully");
       } else {
         toast.error("Failed to delete customer");
@@ -71,23 +79,9 @@ const Customers = () => {
     }
   };
 
-  const openBalanceDialog = (customer) => {
+  const handleBalance = (customer: Customer) => {
     setSelectedCustomer(customer);
     setIsBalanceDialogOpen(true);
-  };
-
-  const handleCustomerTemplateDownload = () => {
-    downloadCustomersTemplate();
-    toast.success("Customer template downloaded");
-  };
-
-  const handleImportCustomers = () => {
-    setIsImportDialogOpen(true);
-  };
-
-  const handleExportCustomers = () => {
-    exportCustomersToExcel();
-    toast.success("Customers exported to Excel");
   };
 
   return (
@@ -95,139 +89,111 @@ const Customers = () => {
       <div className="p-6">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">Customers</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleCustomerTemplateDownload}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Download Template
+          <div className="flex items-center gap-4">
+            <Input
+              type="search"
+              placeholder="Search customers..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
+            <Button onClick={handleAddCustomer}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Customer
             </Button>
-            <Button variant="outline" size="sm" onClick={handleImportCustomers}>
-              <FileUp className="mr-2 h-4 w-4" />
-              Import Customers
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportCustomers}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Customers
-            </Button>
-            <AddCustomerButton />
+            <Button onClick={() => navigate("/")}>Back to Dashboard</Button>
           </div>
-        </div>
-
-        <div className="mb-6">
-          <Input
-            placeholder="Search customers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Customer Directory</CardTitle>
-            <CardDescription>Manage your customer database</CardDescription>
+            <CardTitle>Customer List</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Registration Date</TableHead>
-                  <TableHead>Total Orders</TableHead>
-                  <TableHead>Total Spent</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCustomers.length === 0 ? (
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center">
-                      No customers found
-                    </TableCell>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Registration Date</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
-                ) : (
-                  filteredCustomers.map((customer) => (
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => (
                     <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell>{customer.name}</TableCell>
                       <TableCell>{customer.email}</TableCell>
                       <TableCell>{customer.phone || "N/A"}</TableCell>
                       <TableCell>
-                        {format(new Date(customer.registrationDate), "PP")}
+                        {customer.registrationDate.toLocaleDateString()}
                       </TableCell>
-                      <TableCell>{customer.totalOrders}</TableCell>
-                      <TableCell>${customer.totalSpent.toFixed(2)}</TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex items-center space-x-2">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            onClick={() => openBalanceDialog(customer)}
+                            onClick={() => handleEditCustomer(customer)}
                           >
+                            <Pencil className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBalance(customer)}
+                          >
+                            <Wallet className="mr-2 h-4 w-4" />
                             Balance
                           </Button>
                           <Button
-                            variant="ghost"
+                            variant="destructive"
                             size="sm"
-                            onClick={() => handleEdit(customer)}
+                            onClick={() => handleDeleteCustomer(customer.id)}
                           >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDelete(customer.id)}
-                          >
-                            <Trash className="h-4 w-4" />
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+      <Dialog open={isCustomerFormOpen} onOpenChange={setIsCustomerFormOpen}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit Customer</DialogTitle>
+            <DialogTitle>
+              {selectedCustomer ? "Edit Customer" : "Add Customer"}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedCustomer
+                ? "Update customer information here."
+                : "Enter the customer details below."}
+            </DialogDescription>
           </DialogHeader>
-          {editingCustomer && (
-            <CustomerForm
-              initialData={editingCustomer}
-              onSuccess={() => setIsDialogOpen(false)}
-            />
-          )}
+          <CustomerFormWrapper initialData={selectedCustomer} onSuccess={() => setIsCustomerFormOpen(false)} />
         </DialogContent>
       </Dialog>
 
       <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Customer Balance</DialogTitle>
+            <DialogDescription>
+              View and manage customer balance.
+            </DialogDescription>
           </DialogHeader>
-          {selectedCustomer && (
-            <CustomerBalance
-              customer={selectedCustomer}
-              onSuccess={() => setIsBalanceDialogOpen(false)}
-            />
-          )}
+          <CustomerBalanceWrapper customer={selectedCustomer} onSuccess={() => setIsBalanceDialogOpen(false)} />
         </DialogContent>
       </Dialog>
-      
-      <ImportExcelDialog
-        open={isImportDialogOpen}
-        onOpenChange={setIsImportDialogOpen}
-        type="customers"
-        onImportComplete={() => {
-          setIsImportDialogOpen(false);
-          setSearchQuery("");
-        }}
-      />
     </MainLayout>
   );
 };

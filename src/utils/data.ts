@@ -36,7 +36,7 @@ export interface Order {
   items: CartItem[];
   total: number;
   tax: number;
-  status: 'pending' | 'completed' | 'cancelled';
+  status: 'pending' | 'completed' | 'cancelled' | 'in-progress';
   date: Date;
   customerId?: string;
   customerName?: string;
