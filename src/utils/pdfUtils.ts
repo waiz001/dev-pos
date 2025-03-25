@@ -51,7 +51,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
     `$${paymentSummary[method.id].toFixed(2)}`
   ]);
   
-  doc.autoTable({
+  const paymentTable = doc.autoTable({
     startY: 70,
     head: [["Payment Method", "Amount"]],
     body: paymentData,
@@ -59,7 +59,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Orders Table
   doc.setFontSize(14);
-  let finalY = doc.autoTable.previous.finalY || 70;
+  const finalY = paymentTable.previous.finalY || 70;
   doc.text("Order Details", 14, finalY + 15);
   
   const orderRows = orders.map(order => {
@@ -112,13 +112,13 @@ export const generateOrderReceiptPDF = (order: Order) => {
     `$${(item.price * item.quantity).toFixed(2)}`
   ]);
   
-  doc.autoTable({
+  const itemsTable = doc.autoTable({
     startY: 95,
     head: [["Item", "Qty", "Price", "Total"]],
     body: itemRows,
   });
   
-  let finalY = doc.autoTable.previous.finalY || 95;
+  const finalY = itemsTable.previous.finalY || 95;
   // Total
   doc.text(`Total: $${order.total.toFixed(2)}`, 140, finalY + 20, { align: "right" });
   
