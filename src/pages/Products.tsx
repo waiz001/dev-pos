@@ -1,266 +1,247 @@
 
-import React, { useState, useEffect } from "react";
-import { PlusCircle, Edit, Trash2, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import React, { useState, useMemo } from "react";
+import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { products, deleteProduct, categories } from "@/utils/data";
+import { FileDown, FileUp, Pencil, Trash } from "lucide-react";
 import { toast } from "sonner";
-import MainLayout from "@/components/layout/MainLayout";
-import { 
-  products, 
-  categories, 
-  addProduct, 
-  updateProduct, 
-  deleteProduct, 
-  Product 
-} from "@/utils/data";
-import { useForm } from "react-hook-form";
-import ProductForm from "@/components/forms/ProductForm";
 import AddProductButton from "@/components/forms/AddProductButton";
+import ProductForm from "@/components/forms/ProductForm";
+import { 
+  downloadProductsTemplate, 
+  exportProductsToExcel 
+} from "@/utils/excelUtils";
+import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
 const Products = () => {
-  const [productsList, setProductsList] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  
-  // Load the products list
-  const refreshProducts = () => {
-    setProductsList([...products]);
-  };
-  
-  useEffect(() => {
-    refreshProducts();
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
+  const filteredProducts = useMemo(() => {
+    let filtered = [...products];
     
-    // Listen for product updates
-    const handleProductUpdate = () => refreshProducts();
-    window.addEventListener('product-updated', handleProductUpdate);
-    
-    return () => {
-      window.removeEventListener('product-updated', handleProductUpdate);
-    };
-  }, []);
-  
-  const handleSearch = () => {
-    if (!searchQuery) {
-      refreshProducts();
-      return;
+    if (searchQuery) {
+      filtered = filtered.filter(product => 
+        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        product.barcode?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
     
-    const query = searchQuery.toLowerCase();
-    const filtered = products.filter(product => 
-      product.name.toLowerCase().includes(query) || 
-      product.category.toLowerCase().includes(query) ||
-      product.barcode?.toLowerCase().includes(query)
-    );
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
     
-    setProductsList(filtered);
+    return filtered;
+  }, [products, searchQuery, selectedCategory]);
+
+  const handleEdit = (product) => {
+    setEditingProduct(product);
+    setIsDialogOpen(true);
   };
-  
-  // Search products when query changes
-  useEffect(() => {
-    handleSearch();
-  }, [searchQuery]);
-  
-  const handleEditProduct = (data: Product) => {
-    if (!selectedProduct) return;
-    
-    try {
-      const updated = updateProduct(selectedProduct.id, data);
-      if (updated) {
-        refreshProducts();
-        toast.success(`Product "${updated.name}" updated successfully`);
-        setIsEditDialogOpen(false);
-        setSelectedProduct(null);
+
+  const handleDelete = (id) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      const success = deleteProduct(id);
+      if (success) {
+        toast.success("Product deleted successfully");
       } else {
-        toast.error("Product not found");
+        toast.error("Failed to delete product");
       }
-    } catch (error) {
-      toast.error("Failed to update product");
-      console.error(error);
     }
   };
-  
-  const handleDeleteProduct = () => {
-    if (!selectedProduct) return;
-    
-    try {
-      const deleted = deleteProduct(selectedProduct.id);
-      if (deleted) {
-        refreshProducts();
-        toast.success(`Product deleted successfully`);
-      } else {
-        toast.error("Product not found");
-      }
-    } catch (error) {
-      toast.error("Failed to delete product");
-      console.error(error);
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setSelectedProduct(null);
-    }
+
+  const handleProductTemplateDownload = () => {
+    downloadProductsTemplate();
+    toast.success("Product template downloaded");
   };
-  
+
+  const handleImportProducts = () => {
+    setIsImportDialogOpen(true);
+  };
+
+  const handleExportProducts = () => {
+    exportProductsToExcel();
+    toast.success("Products exported to Excel");
+  };
+
   return (
     <MainLayout>
-      <div className="container mx-auto py-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Product Management</h1>
+      <div className="p-6">
+        <div className="mb-6 flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold">Products</h1>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleProductTemplateDownload}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Download Template
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleImportProducts}>
+                <FileUp className="mr-2 h-4 w-4" />
+                Import Products
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportProducts}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Export Products
+              </Button>
+              <AddProductButton />
+            </div>
+          </div>
           
           <div className="flex items-center gap-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search products..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+            <Input
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="max-w-sm"
+            />
             
-            <AddProductButton />
+            <div className="flex flex-wrap gap-2">
+              <Badge
+                variant={selectedCategory === "all" ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => setSelectedCategory("all")}
+              >
+                All Products
+              </Badge>
+              {categories.slice(1).map((category) => (
+                <Badge
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  {category.name}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
-        
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Barcode</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {productsList.length === 0 ? (
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Inventory</CardTitle>
+            <CardDescription>
+              Manage your product catalog and inventory levels
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    No products found
-                  </TableCell>
+                  <TableHead>Image</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : (
-                productsList.map((product) => (
-                  <TableRow key={product.id}>
-                    <TableCell>
-                      <div className="h-10 w-10 overflow-hidden rounded-md">
-                        <img 
-                          src={product.image} 
-                          alt={product.name} 
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://placehold.co/100x100?text=No+Image";
-                          }}
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>
-                      {categories.find(c => c.id === product.category)?.name || product.category}
-                    </TableCell>
-                    <TableCell>${product.price.toFixed(2)}</TableCell>
-                    <TableCell>{product.inStock}</TableCell>
-                    <TableCell>{product.barcode || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedProduct(product);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center">
+                      No products found
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-        
-        {/* Edit Product Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Edit Product</DialogTitle>
-            </DialogHeader>
-            
-            {selectedProduct && (
-              <ProductForm 
-                onSubmit={handleEditProduct} 
-                initialData={selectedProduct} 
-                buttonText="Save Changes" 
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-        
-        {/* Delete Confirmation Dialog */}
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete the product "{selectedProduct?.name}".
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                className="bg-destructive hover:bg-destructive/90"
-                onClick={handleDeleteProduct}
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+                ) : (
+                  filteredProducts.map((product) => (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>
+                        {categories.find(c => c.id === product.category)?.name || product.category}
+                      </TableCell>
+                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={product.inStock > 10 ? "outline" : "destructive"}
+                        >
+                          {product.inStock}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(product)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(product.id)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+          {editingProduct && (
+            <ProductForm
+              initialData={editingProduct}
+              onSuccess={() => setIsDialogOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      <ImportExcelDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        type="products"
+        onImportComplete={() => {
+          setIsImportDialogOpen(false);
+          setSearchQuery("");
+        }}
+      />
     </MainLayout>
   );
 };

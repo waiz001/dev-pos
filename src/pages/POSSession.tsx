@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -17,31 +18,33 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { addOrder, products, orders, customers, paymentMethods } from "@/utils/data";
+import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order } from "@/utils/data";
 import { toast } from "sonner";
-import { FileDown, FileUp, Printer, RotateCcw } from "lucide-react";
+import { FileDown, FileUp, Printer, RotateCcw, ListOrdered, PlusCircle } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
 import RecoveryForm from "@/components/pos/RecoveryForm";
+import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
 import { generateDailySalesReportPDF, generateOrderReceiptPDF } from "@/utils/pdfUtils";
 import PDFViewer from "@/components/reports/PDFViewer";
-import { downloadCustomersTemplate, downloadProductsTemplate, exportCustomersToExcel, exportProductsToExcel } from "@/utils/excelUtils";
-import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
 const POSSession = () => {
   const navigate = useNavigate();
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("guest");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
-  const [lastOrderId, setLastOrderId] = useState(null);
+  const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isImportProductsDialogOpen, setIsImportProductsDialogOpen] = useState(false);
-  const [isImportCustomersDialogOpen, setIsImportCustomersDialogOpen] = useState(false);
-  const [pdfDocument, setPdfDocument] = useState(null);
+  const [isAllOrdersDialogOpen, setIsAllOrdersDialogOpen] = useState(false);
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
   
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => 
@@ -49,7 +52,7 @@ const POSSession = () => {
       )
     : [];
 
-  const addToCart = (product) => {
+  const addToCart = (product: any) => {
     if (!product) return;
     
     const existingItem = cart.find((item) => item.id === product.id);
@@ -68,11 +71,11 @@ const POSSession = () => {
     toast.success(`${product.name} added to cart`);
   };
 
-  const removeFromCart = (productId) => {
+  const removeFromCart = (productId: string) => {
     setCart(cart.filter((item) => item.id !== productId));
   };
 
-  const updateQuantity = (productId, quantity) => {
+  const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
@@ -103,11 +106,11 @@ const POSSession = () => {
       ? customers.find(c => c.id === selectedCustomerId) 
       : null;
     
-    const newOrder = {
+    const orderData = {
       items: [...cart],
       total: calculateTotal(),
       tax: calculateTax(),
-      status: "completed" as "completed" | "pending" | "cancelled",
+      status: "completed" as "completed" | "pending" | "cancelled" | "in-progress",
       date: new Date(),
       customerId: selectedCustomer?.id || "",
       customerName: selectedCustomer?.name || "Walk-in Customer",
@@ -115,23 +118,100 @@ const POSSession = () => {
     };
     
     try {
-      const order = addOrder(newOrder);
-      setLastOrderId(order.id);
-      toast.success("Order completed successfully");
+      // If we're updating an existing in-progress order
+      if (currentOrderId) {
+        const updatedOrder = updateOrder(currentOrderId, {
+          ...orderData,
+          status: "completed"
+        });
+        
+        if (updatedOrder) {
+          setLastOrderId(updatedOrder.id);
+          toast.success("Order completed successfully");
+          
+          generateReceipt(updatedOrder);
+          setIsPrintDialogOpen(true);
+        } else {
+          toast.error("Failed to update order");
+        }
+      } else { // Creating a new order
+        const order = addOrder(orderData);
+        setLastOrderId(order.id);
+        toast.success("Order completed successfully");
+        
+        generateReceipt(order);
+        setIsPrintDialogOpen(true);
+      }
       
-      generateReceipt(order);
-      setIsPrintDialogOpen(true);
-      
-      setCart([]);
-      setSelectedCustomerId("guest");
-      setSelectedPaymentMethod("cash");
+      resetCart();
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to complete order");
     }
   };
 
-  const generateReceipt = (order?) => {
+  const saveOrderInProgress = () => {
+    if (cart.length === 0) {
+      toast.error("Cart is empty");
+      return false;
+    }
+    
+    const selectedCustomer = selectedCustomerId !== "guest" 
+      ? customers.find(c => c.id === selectedCustomerId) 
+      : null;
+    
+    try {
+      const order = addOrder({
+        items: [...cart],
+        total: calculateTotal(),
+        tax: calculateTax(),
+        status: "in-progress" as "completed" | "pending" | "cancelled" | "in-progress",
+        date: new Date(),
+        customerId: selectedCustomer?.id || "",
+        customerName: selectedCustomer?.name || "Walk-in Customer",
+        paymentMethod: selectedPaymentMethod,
+      });
+      
+      toast.success("Order saved as in-progress");
+      return true;
+    } catch (error) {
+      console.error("Error saving in-progress order:", error);
+      toast.error("Failed to save order");
+      return false;
+    }
+  };
+
+  const handleNewOrder = () => {
+    if (cart.length > 0) {
+      setIsNewOrderDialogOpen(true);
+    } else {
+      resetCart();
+    }
+  };
+
+  const confirmNewOrder = () => {
+    if (saveOrderInProgress()) {
+      resetCart();
+      setIsNewOrderDialogOpen(false);
+    }
+  };
+
+  const resetCart = () => {
+    setCart([]);
+    setCurrentOrderId(null);
+    setSelectedCustomerId("guest");
+    setSelectedPaymentMethod("cash");
+  };
+
+  const loadOrder = (order: Order) => {
+    setCart(order.items);
+    setSelectedCustomerId(order.customerId || "guest");
+    setSelectedPaymentMethod(order.paymentMethod);
+    setCurrentOrderId(order.id);
+    toast.info(`Order ${order.id} loaded`);
+  };
+
+  const generateReceipt = (order?: Order) => {
     if (!order && !lastOrderId) {
       toast.error("No order to print");
       return;
@@ -165,7 +245,7 @@ const POSSession = () => {
       tax: calculateTax(),
       customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: selectedPaymentMethod,
-      status: "pending" as "pending" | "completed" | "cancelled",
+      status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
     };
     
     const pdfDoc = generateOrderReceiptPDF(tempOrder);
@@ -206,34 +286,6 @@ const POSSession = () => {
     }
   }, [orders]);
 
-  const handleImportProducts = () => {
-    setIsImportProductsDialogOpen(true);
-  };
-
-  const handleImportCustomers = () => {
-    setIsImportCustomersDialogOpen(true);
-  };
-
-  const handleExportProducts = () => {
-    exportProductsToExcel();
-    toast.success("Products exported to Excel");
-  };
-
-  const handleExportCustomers = () => {
-    exportCustomersToExcel();
-    toast.success("Customers exported to Excel");
-  };
-
-  const handleProductTemplateDownload = () => {
-    downloadProductsTemplate();
-    toast.success("Product template downloaded");
-  };
-
-  const handleCustomerTemplateDownload = () => {
-    downloadCustomersTemplate();
-    toast.success("Customer template downloaded");
-  };
-
   return (
     <MainLayout>
       <div className="p-6">
@@ -248,6 +300,11 @@ const POSSession = () => {
               <Button variant="outline" onClick={() => setIsRecoveryDialogOpen(true)}>
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Recovery
+              </Button>
+              
+              <Button variant="outline" onClick={() => setIsAllOrdersDialogOpen(true)}>
+                <ListOrdered className="mr-2 h-4 w-4" />
+                All Orders
               </Button>
               
               <Button variant="outline" onClick={() => { 
@@ -269,36 +326,6 @@ const POSSession = () => {
             </div>
             
             <Button onClick={() => navigate("/")}>Close Session</Button>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-6 mb-6">
-          <div className="space-x-2">
-            <Button variant="outline" size="sm" onClick={handleProductTemplateDownload}>
-              Download Products Template
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleImportProducts}>
-              <FileUp className="mr-2 h-4 w-4" />
-              Import Products
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportProducts}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Products
-            </Button>
-          </div>
-          
-          <div className="space-x-2">
-            <Button variant="outline" size="sm" onClick={handleCustomerTemplateDownload}>
-              Download Customers Template
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleImportCustomers}>
-              <FileUp className="mr-2 h-4 w-4" />
-              Import Customers
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportCustomers}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Customers
-            </Button>
           </div>
         </div>
 
@@ -328,10 +355,16 @@ const POSSession = () => {
 
           <div className="col-span-4">
             <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Cart</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-medium">
+                  {currentOrderId ? `Editing Order: ${currentOrderId}` : "New Order"}
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={handleNewOrder}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  New Order
+                </Button>
               </CardHeader>
-              <CardContent className="flex h-[calc(100%-64px)] flex-col">
+              <CardContent className="flex h-[calc(100%-84px)] flex-col">
                 <div className="mb-4 space-y-4">
                   <div>
                     <label htmlFor="customer" className="block text-sm font-medium mb-1">
@@ -475,24 +508,33 @@ const POSSession = () => {
         filename="daily_sales_report.pdf"
       />
       
-      <ImportExcelDialog
-        open={isImportProductsDialogOpen}
-        onOpenChange={setIsImportProductsDialogOpen}
-        type="products"
-        onImportComplete={() => {
-          setIsImportProductsDialogOpen(false);
-          setSearchQuery("");
-        }}
+      <AllOrdersDialog
+        open={isAllOrdersDialogOpen}
+        onOpenChange={setIsAllOrdersDialogOpen}
+        onSelectOrder={loadOrder}
       />
       
-      <ImportExcelDialog
-        open={isImportCustomersDialogOpen}
-        onOpenChange={setIsImportCustomersDialogOpen}
-        type="customers"
-        onImportComplete={() => {
-          setIsImportCustomersDialogOpen(false);
-        }}
-      />
+      <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Start New Order</DialogTitle>
+            <DialogDescription>
+              You have items in your current order. What would you like to do with them?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Your current order will be saved as "In Progress" and can be resumed later.</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNewOrderDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmNewOrder}>
+              Save and Start New Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
