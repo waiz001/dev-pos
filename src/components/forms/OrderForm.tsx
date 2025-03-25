@@ -110,6 +110,11 @@ const OrderForm: React.FC<OrderFormProps> = ({
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
+  const calculateTax = () => {
+    // Calculate tax as 10% of the total
+    return calculateTotal() * 0.1;
+  };
+
   const handleSubmit = (values: OrderFormValues) => {
     if (cart.length === 0) {
       toast.error("Please add at least one product to the order");
@@ -139,6 +144,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       date: new Date(),
       items: cart,
       total: calculateTotal(),
+      tax: calculateTax(), // Add tax calculation
       customerName: selectedCustomer?.name || form.getValues().customerName || "Guest",
       paymentMethod: form.getValues().paymentMethod,
       notes: form.getValues().notes || "",

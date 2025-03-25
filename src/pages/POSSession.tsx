@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -90,6 +89,10 @@ const POSSession = () => {
     return cart.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
+  const calculateTax = () => {
+    return calculateTotal() * 0.1;
+  };
+
   const handleCheckout = () => {
     if (cart.length === 0) {
       toast.error("Cart is empty");
@@ -103,7 +106,7 @@ const POSSession = () => {
     const newOrder = {
       items: [...cart],
       total: calculateTotal(),
-      tax: 0,
+      tax: calculateTax(),
       status: "completed" as "completed" | "pending" | "cancelled",
       date: new Date(),
       customerId: selectedCustomer?.id || "",
@@ -150,7 +153,6 @@ const POSSession = () => {
       return;
     }
     
-    // Create a temporary order object for printing
     const selectedCustomer = selectedCustomerId !== "guest"
       ? customers.find(c => c.id === selectedCustomerId) 
       : null;
@@ -160,6 +162,7 @@ const POSSession = () => {
       date: new Date(),
       items: cart,
       total: calculateTotal(),
+      tax: calculateTax(),
       customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: selectedPaymentMethod,
       status: "pending" as "pending" | "completed" | "cancelled",

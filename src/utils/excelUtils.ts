@@ -1,5 +1,6 @@
+
 import * as XLSX from 'xlsx';
-import { Product, Customer, addProduct, updateProduct, addCustomer, updateCustomer } from './data';
+import { Product, Customer, addProduct, updateProduct, addCustomer, updateCustomer, customers } from './data';
 
 /**
  * Export data to Excel file
@@ -192,8 +193,7 @@ export const exportProductsToExcel = () => {
  * Export all customers to Excel
  */
 export const exportCustomersToExcel = () => {
-  // Import and use local data
-  const { customers } = require('./data');
+  // Use the imported customers directly instead of require
   exportToExcel(customers, 'customers_export');
 };
 
