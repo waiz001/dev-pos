@@ -6,7 +6,11 @@ import { Order, Customer, Product, paymentMethods } from "./data";
 // Extend the jsPDF type definition to include the autoTable method
 declare module "jspdf" {
   interface jsPDF {
-    autoTable: (options: any) => jsPDF;
+    autoTable: (options: any) => jsPDF & {
+      previous: {
+        finalY: number;
+      };
+    };
   }
 }
 
@@ -55,7 +59,8 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Orders Table
   doc.setFontSize(14);
-  doc.text("Order Details", 14, doc.autoTable.previous.finalY + 15);
+  let finalY = doc.autoTable.previous.finalY || 70;
+  doc.text("Order Details", 14, finalY + 15);
   
   const orderRows = orders.map(order => {
     const paymentMethod = paymentMethods.find(p => p.id === order.paymentMethod);
@@ -69,7 +74,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   });
   
   doc.autoTable({
-    startY: doc.autoTable.previous.finalY + 20,
+    startY: finalY + 20,
     head: [["Order ID", "Customer", "Date", "Payment", "Total"]],
     body: orderRows,
   });
@@ -113,8 +118,9 @@ export const generateOrderReceiptPDF = (order: Order) => {
     body: itemRows,
   });
   
+  let finalY = doc.autoTable.previous.finalY || 95;
   // Total
-  doc.text(`Total: $${order.total.toFixed(2)}`, 140, doc.autoTable.previous.finalY + 20, { align: "right" });
+  doc.text(`Total: $${order.total.toFixed(2)}`, 140, finalY + 20, { align: "right" });
   
   // Footer
   doc.setFontSize(10);

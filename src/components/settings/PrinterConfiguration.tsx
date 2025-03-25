@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -190,13 +189,13 @@ const PrinterConfiguration: React.FC<PrinterConfigurationProps> = () => {
       // Add new printer
       const newPrinter: Printer = {
         id: `printer-${Date.now()}`,
-        ...values
+        name: values.name,
+        ipAddress: values.ipAddress,
+        port: values.port,
+        type: values.type,
+        isDefault: printers.length === 0 ? true : values.isDefault,
+        isActive: values.isActive
       };
-      
-      // If this is the first printer or marked as default
-      if (printers.length === 0 || values.isDefault) {
-        newPrinter.isDefault = true;
-      }
       
       const updatedPrinters = [...printers, newPrinter];
       setPrinters(updatedPrinters);

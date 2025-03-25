@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -139,7 +138,10 @@ const ShopManagement: React.FC<ShopManagementProps> = () => {
       // Add new shop
       const newShop: Shop = {
         id: `shop-${Date.now()}`,
-        ...values
+        name: values.name,
+        address: values.address,
+        contact: values.contact,
+        description: values.description
       };
       const updatedShops = [...shops, newShop];
       setShops(updatedShops);

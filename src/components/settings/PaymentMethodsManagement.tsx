@@ -141,7 +141,8 @@ const PaymentMethodsManagement: React.FC<PaymentMethodsManagementProps> = () => 
       // Add new method
       const newMethod: PaymentMethod = {
         id: `payment-${Date.now()}`,
-        ...values
+        name: values.name,
+        isActive: values.isActive
       };
       const updatedMethods = [...methods, newMethod];
       setMethods(updatedMethods);

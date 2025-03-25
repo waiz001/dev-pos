@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -43,7 +42,6 @@ const POSSession = () => {
   const [isImportCustomersDialogOpen, setIsImportCustomersDialogOpen] = useState(false);
   const [pdfDocument, setPdfDocument] = useState(null);
   
-  // Fix: Add safety check for product filtering
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => 
         product.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -103,8 +101,8 @@ const POSSession = () => {
     const newOrder = {
       items: [...cart],
       total: calculateTotal(),
-      tax: 0, // Tax removed as per requirement
-      status: "completed" as "completed" | "pending" | "cancelled", // Fix for TypeScript error
+      tax: 0,
+      status: "completed" as "completed" | "pending" | "cancelled",
       date: new Date(),
       customerId: selectedCustomer?.id || "",
       customerName: selectedCustomer?.name || "Walk-in Customer",
@@ -116,11 +114,9 @@ const POSSession = () => {
       setLastOrderId(order.id);
       toast.success("Order completed successfully");
       
-      // Open print dialog automatically
       generateReceipt(order);
       setIsPrintDialogOpen(true);
       
-      // Reset cart and selected customer
       setCart([]);
       setSelectedCustomerId("guest");
     } catch (error) {
@@ -129,7 +125,7 @@ const POSSession = () => {
     }
   };
 
-  const generateReceipt = (order) => {
+  const generateReceipt = (order?) => {
     if (!order && !lastOrderId) {
       toast.error("No order to print");
       return;
@@ -161,7 +157,6 @@ const POSSession = () => {
     setIsReportDialogOpen(true);
   };
 
-  // Fix: Using a useEffect to ensure the todayOrders calculation is correct
   const [todayOrders, setTodayOrders] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
 
@@ -179,7 +174,6 @@ const POSSession = () => {
     }
   }, [orders]);
 
-  // Handle Excel Import/Export
   const handleImportProducts = () => {
     setIsImportProductsDialogOpen(true);
   };
@@ -277,7 +271,6 @@ const POSSession = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-          {/* Products */}
           <div className="col-span-8">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -301,7 +294,6 @@ const POSSession = () => {
             </Card>
           </div>
 
-          {/* Cart */}
           <div className="col-span-4">
             <Card className="h-full">
               <CardHeader>
@@ -395,7 +387,6 @@ const POSSession = () => {
         </div>
       </div>
 
-      {/* Recovery Dialog */}
       <Dialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -405,7 +396,6 @@ const POSSession = () => {
         </DialogContent>
       </Dialog>
 
-      {/* PDF Viewer for receipts */}
       <PDFViewer
         open={isPrintDialogOpen}
         onOpenChange={setIsPrintDialogOpen}
@@ -414,7 +404,6 @@ const POSSession = () => {
         filename="receipt.pdf"
       />
       
-      {/* PDF Viewer for daily sales report */}
       <PDFViewer
         open={isReportDialogOpen}
         onOpenChange={setIsReportDialogOpen}
@@ -423,14 +412,12 @@ const POSSession = () => {
         filename="daily_sales_report.pdf"
       />
       
-      {/* Import Dialogs */}
       <ImportExcelDialog
         open={isImportProductsDialogOpen}
         onOpenChange={setIsImportProductsDialogOpen}
         type="products"
         onImportComplete={() => {
           setIsImportProductsDialogOpen(false);
-          // Force a re-render to show the new products
           setSearchQuery("");
         }}
       />
