@@ -34,6 +34,9 @@ import {
   Setting 
 } from "@/utils/data";
 import { useForm } from "react-hook-form";
+import ShopManagement from "@/components/settings/ShopManagement";
+import PaymentMethodsManagement from "@/components/settings/PaymentMethodsManagement";
+import PrinterConfiguration from "@/components/settings/PrinterConfiguration";
 
 const Settings = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -203,10 +206,12 @@ const Settings = () => {
             </div>
           ) : (
             // Show settings by category
-            Object.entries(categoryMap).map(([key, label]) => (
-              <TabsContent key={key} value={key}>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {getSettingsForTab(key as Setting['category']).map(setting => (
+            <>
+              <TabsContent value="general">
+                <ShopManagement />
+                
+                <div className="mt-8 grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('general').map(setting => (
                     <Card key={setting.id}>
                       <CardHeader>
                         <CardTitle className="text-lg">{setting.name}</CardTitle>
@@ -259,7 +264,291 @@ const Settings = () => {
                   ))}
                 </div>
               </TabsContent>
-            ))
+              
+              <TabsContent value="payment">
+                <PaymentMethodsManagement />
+                
+                <div className="mt-8 grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('payment').map(setting => (
+                    <Card key={setting.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{setting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...form}>
+                          <FormField
+                            name="settingValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    {editSetting === setting.id ? (
+                                      <Input 
+                                        {...field} 
+                                        defaultValue={setting.value}
+                                        onChange={(e) => form.setValue("settingValue", e.target.value)}
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="rounded-md border border-input bg-background p-2">{setting.value}</div>
+                                    )}
+                                  </FormControl>
+                                  {editSetting === setting.id ? (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleSaveSetting(setting.id)}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleEditSetting(setting.id, setting.value)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <FormDescription>{setting.description}</FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="printer">
+                <PrinterConfiguration />
+                
+                <div className="mt-8 grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('printer').map(setting => (
+                    <Card key={setting.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{setting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...form}>
+                          <FormField
+                            name="settingValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    {editSetting === setting.id ? (
+                                      <Input 
+                                        {...field} 
+                                        defaultValue={setting.value}
+                                        onChange={(e) => form.setValue("settingValue", e.target.value)}
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="rounded-md border border-input bg-background p-2">{setting.value}</div>
+                                    )}
+                                  </FormControl>
+                                  {editSetting === setting.id ? (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleSaveSetting(setting.id)}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleEditSetting(setting.id, setting.value)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <FormDescription>{setting.description}</FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="tax">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('tax').map(setting => (
+                    <Card key={setting.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{setting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...form}>
+                          <FormField
+                            name="settingValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    {editSetting === setting.id ? (
+                                      <Input 
+                                        {...field} 
+                                        defaultValue={setting.value}
+                                        onChange={(e) => form.setValue("settingValue", e.target.value)}
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="rounded-md border border-input bg-background p-2">{setting.value}</div>
+                                    )}
+                                  </FormControl>
+                                  {editSetting === setting.id ? (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleSaveSetting(setting.id)}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleEditSetting(setting.id, setting.value)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <FormDescription>{setting.description}</FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="notification">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('notification').map(setting => (
+                    <Card key={setting.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{setting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...form}>
+                          <FormField
+                            name="settingValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    {editSetting === setting.id ? (
+                                      <Input 
+                                        {...field} 
+                                        defaultValue={setting.value}
+                                        onChange={(e) => form.setValue("settingValue", e.target.value)}
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="rounded-md border border-input bg-background p-2">{setting.value}</div>
+                                    )}
+                                  </FormControl>
+                                  {editSetting === setting.id ? (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleSaveSetting(setting.id)}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleEditSetting(setting.id, setting.value)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <FormDescription>{setting.description}</FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="security">
+                <div className="grid gap-4 md:grid-cols-2">
+                  {getSettingsForTab('security').map(setting => (
+                    <Card key={setting.id}>
+                      <CardHeader>
+                        <CardTitle className="text-lg">{setting.name}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <Form {...form}>
+                          <FormField
+                            name="settingValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Value</FormLabel>
+                                <div className="flex items-center gap-2">
+                                  <FormControl>
+                                    {editSetting === setting.id ? (
+                                      <Input 
+                                        {...field} 
+                                        defaultValue={setting.value}
+                                        onChange={(e) => form.setValue("settingValue", e.target.value)}
+                                        autoFocus
+                                      />
+                                    ) : (
+                                      <div className="rounded-md border border-input bg-background p-2">{setting.value}</div>
+                                    )}
+                                  </FormControl>
+                                  {editSetting === setting.id ? (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleSaveSetting(setting.id)}
+                                    >
+                                      <Save className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => handleEditSetting(setting.id, setting.value)}
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <FormDescription>{setting.description}</FormDescription>
+                              </FormItem>
+                            )}
+                          />
+                        </Form>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            </>
           )}
         </Tabs>
       </div>

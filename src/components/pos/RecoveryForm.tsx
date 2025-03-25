@@ -107,7 +107,7 @@ const RecoveryForm = ({ onSuccess }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {customers.map((customer) => (
+                  {customers.filter(customer => customer.totalSpent > 0).map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
                       {customer.name} (Balance: ${customer.totalSpent.toFixed(2)})
                     </SelectItem>

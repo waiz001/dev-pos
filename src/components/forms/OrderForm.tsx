@@ -141,7 +141,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Guest</SelectItem>
+                    <SelectItem value="guest">Walk-in Customer</SelectItem>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
                         {customer.name}

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +21,14 @@ import {
 } from "@/components/ui/dialog";
 import { addOrder, products, orders, customers, paymentMethods } from "@/utils/data";
 import { toast } from "sonner";
-import { Printer, RotateCcw } from "lucide-react";
+import { FileDown, FileUp, Printer, RotateCcw } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
 import RecoveryForm from "@/components/pos/RecoveryForm";
+import { generateDailySalesReportPDF, generateOrderReceiptPDF } from "@/utils/pdfUtils";
+import PDFViewer from "@/components/reports/PDFViewer";
+import { downloadCustomersTemplate, downloadProductsTemplate, exportCustomersToExcel, exportProductsToExcel } from "@/utils/excelUtils";
+import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -34,6 +38,10 @@ const POSSession = () => {
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isImportProductsDialogOpen, setIsImportProductsDialogOpen] = useState(false);
+  const [isImportCustomersDialogOpen, setIsImportCustomersDialogOpen] = useState(false);
+  const [pdfDocument, setPdfDocument] = useState(null);
   
   // Fix: Add safety check for product filtering
   const filteredProducts = Array.isArray(products) 
@@ -109,6 +117,7 @@ const POSSession = () => {
       toast.success("Order completed successfully");
       
       // Open print dialog automatically
+      generateReceipt(order);
       setIsPrintDialogOpen(true);
       
       // Reset cart and selected customer
@@ -120,106 +129,36 @@ const POSSession = () => {
     }
   };
 
-  const printOrderSlips = () => {
-    if (!lastOrderId) {
-      toast.error("No recent order to print");
+  const generateReceipt = (order) => {
+    if (!order && !lastOrderId) {
+      toast.error("No order to print");
       return;
     }
     
-    const orderToPrint = orders.find(o => o.id === lastOrderId);
+    const orderToPrint = order || orders.find(o => o.id === lastOrderId);
     if (!orderToPrint) {
       toast.error("Order not found");
       return;
     }
     
-    // In a real app, you would use a library like react-to-print or send to a backend
-    // For demonstration, we'll just prepare the print content and show it in a new window
-    const printWindow = window.open('', '_blank');
+    const pdfDoc = generateOrderReceiptPDF(orderToPrint);
+    setPdfDocument(pdfDoc);
+  };
+
+  const generateDailySalesReport = () => {
+    const today = new Date().toDateString();
+    const todaysOrders = orders.filter(
+      (order) => new Date(order.date).toDateString() === today
+    );
     
-    if (printWindow) {
-      const printContent = `
-        <html>
-          <head>
-            <title>Order Receipt</title>
-            <style>
-              body { font-family: Arial, sans-serif; margin: 0; padding: 10px; }
-              .receipt { border: 1px solid #ccc; padding: 10px; margin-bottom: 20px; }
-              h2 { margin-bottom: 10px; }
-              .header { text-align: center; margin-bottom: 20px; }
-              .items { margin: 15px 0; }
-              .item { margin-bottom: 5px; }
-              .total { font-weight: bold; margin-top: 10px; border-top: 1px solid #ccc; padding-top: 10px; }
-              .footer { margin-top: 15px; text-align: center; font-size: 12px; }
-            </style>
-          </head>
-          <body>
-            <!-- First Copy - For Customer -->
-            <div class="receipt">
-              <div class="header">
-                <h2>POS System</h2>
-                <p>Order #${orderToPrint.id.split('-')[1]}</p>
-                <p>Date: ${new Date(orderToPrint.date).toLocaleString()}</p>
-                <p>Customer: ${orderToPrint.customerName}</p>
-              </div>
-              <div class="items">
-                <p><strong>Items:</strong></p>
-                ${orderToPrint.items.map(item => `
-                  <div class="item">
-                    ${item.name} x ${item.quantity} = $${(item.price * item.quantity).toFixed(2)}
-                  </div>
-                `).join('')}
-              </div>
-              <div class="total">
-                <p>Total: $${orderToPrint.total.toFixed(2)}</p>
-              </div>
-              <div class="footer">
-                <p>Thank you for your purchase!</p>
-                <p>CUSTOMER COPY</p>
-              </div>
-            </div>
-            
-            <!-- Second Copy - For Merchant -->
-            <div class="receipt">
-              <div class="header">
-                <h2>POS System</h2>
-                <p>Order #${orderToPrint.id.split('-')[1]}</p>
-                <p>Date: ${new Date(orderToPrint.date).toLocaleString()}</p>
-                <p>Customer: ${orderToPrint.customerName}</p>
-              </div>
-              <div class="items">
-                <p><strong>Items:</strong></p>
-                ${orderToPrint.items.map(item => `
-                  <div class="item">
-                    ${item.name} x ${item.quantity} = $${(item.price * item.quantity).toFixed(2)}
-                  </div>
-                `).join('')}
-              </div>
-              <div class="total">
-                <p>Total: $${orderToPrint.total.toFixed(2)}</p>
-              </div>
-              <div class="footer">
-                <p>Thank you for your purchase!</p>
-                <p>MERCHANT COPY</p>
-              </div>
-            </div>
-            
-            <script>
-              window.onload = function() {
-                window.print();
-              }
-            </script>
-          </body>
-        </html>
-      `;
-      
-      printWindow.document.open();
-      printWindow.document.write(printContent);
-      printWindow.document.close();
-    } else {
-      toast.error("Unable to open print window. Please check your popup settings.");
+    if (todaysOrders.length === 0) {
+      toast.error("No sales recorded today");
+      return;
     }
     
-    setIsPrintDialogOpen(false);
+    const pdfDoc = generateDailySalesReportPDF(todaysOrders);
+    setPdfDocument(pdfDoc);
+    setIsReportDialogOpen(true);
   };
 
   // Fix: Using a useEffect to ensure the todayOrders calculation is correct
@@ -240,6 +179,35 @@ const POSSession = () => {
     }
   }, [orders]);
 
+  // Handle Excel Import/Export
+  const handleImportProducts = () => {
+    setIsImportProductsDialogOpen(true);
+  };
+
+  const handleImportCustomers = () => {
+    setIsImportCustomersDialogOpen(true);
+  };
+
+  const handleExportProducts = () => {
+    exportProductsToExcel();
+    toast.success("Products exported to Excel");
+  };
+
+  const handleExportCustomers = () => {
+    exportCustomersToExcel();
+    toast.success("Customers exported to Excel");
+  };
+
+  const handleProductTemplateDownload = () => {
+    downloadProductsTemplate();
+    toast.success("Product template downloaded");
+  };
+
+  const handleCustomerTemplateDownload = () => {
+    downloadCustomersTemplate();
+    toast.success("Customer template downloaded");
+  };
+
   return (
     <MainLayout>
       <div className="p-6">
@@ -249,15 +217,62 @@ const POSSession = () => {
             <Badge variant="outline" className="text-lg">
               Today's Sales: ${totalSales.toFixed(2)}
             </Badge>
-            <Button variant="outline" onClick={() => setIsRecoveryDialogOpen(true)}>
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Recovery
-            </Button>
-            <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print Last Order
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsRecoveryDialogOpen(true)}>
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Recovery
+              </Button>
+              
+              <Button variant="outline" onClick={() => { 
+                if (lastOrderId) {
+                  generateReceipt();
+                  setIsPrintDialogOpen(true);
+                } else {
+                  toast.error("No recent order to print");
+                }
+              }}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print Last Order
+              </Button>
+              
+              <Button variant="outline" onClick={generateDailySalesReport}>
+                <FileDown className="mr-2 h-4 w-4" />
+                Daily Report
+              </Button>
+            </div>
+            
             <Button onClick={() => navigate("/")}>Close Session</Button>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-6 mb-6">
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" onClick={handleProductTemplateDownload}>
+              Download Products Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleImportProducts}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Products
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportProducts}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Export Products
+            </Button>
+          </div>
+          
+          <div className="space-x-2">
+            <Button variant="outline" size="sm" onClick={handleCustomerTemplateDownload}>
+              Download Customers Template
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleImportCustomers}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Customers
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportCustomers}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Export Customers
+            </Button>
           </div>
         </div>
 
@@ -390,29 +405,44 @@ const POSSession = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Print Dialog */}
-      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Print Order Receipt</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Are you ready to print the receipt for this order?</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This will print two copies of the receipt - one for the customer and one for your records.
-            </p>
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={printOrderSlips}>
-              <Printer className="mr-2 h-4 w-4" />
-              Print Receipt
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* PDF Viewer for receipts */}
+      <PDFViewer
+        open={isPrintDialogOpen}
+        onOpenChange={setIsPrintDialogOpen}
+        pdfDocument={pdfDocument}
+        title="Order Receipt"
+        filename="receipt.pdf"
+      />
+      
+      {/* PDF Viewer for daily sales report */}
+      <PDFViewer
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        pdfDocument={pdfDocument}
+        title="Daily Sales Report"
+        filename="daily_sales_report.pdf"
+      />
+      
+      {/* Import Dialogs */}
+      <ImportExcelDialog
+        open={isImportProductsDialogOpen}
+        onOpenChange={setIsImportProductsDialogOpen}
+        type="products"
+        onImportComplete={() => {
+          setIsImportProductsDialogOpen(false);
+          // Force a re-render to show the new products
+          setSearchQuery("");
+        }}
+      />
+      
+      <ImportExcelDialog
+        open={isImportCustomersDialogOpen}
+        onOpenChange={setIsImportCustomersDialogOpen}
+        type="customers"
+        onImportComplete={() => {
+          setIsImportCustomersDialogOpen(false);
+        }}
+      />
     </MainLayout>
   );
 };
