@@ -30,7 +30,7 @@ const POSSession = () => {
   const navigate = useNavigate();
   const [cart, setCart] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("guest");
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState(null);
@@ -88,7 +88,7 @@ const POSSession = () => {
       return;
     }
     
-    const selectedCustomer = selectedCustomerId 
+    const selectedCustomer = selectedCustomerId !== "guest" 
       ? customers.find(c => c.id === selectedCustomerId) 
       : null;
     
@@ -96,9 +96,9 @@ const POSSession = () => {
       items: [...cart],
       total: calculateTotal(),
       tax: 0, // Tax removed as per requirement
-      status: "completed",
+      status: "completed" as "completed" | "pending" | "cancelled", // Fix for TypeScript error
       date: new Date(),
-      customerId: selectedCustomer?.id,
+      customerId: selectedCustomer?.id || "",
       customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: "cash",
     };
@@ -113,7 +113,7 @@ const POSSession = () => {
       
       // Reset cart and selected customer
       setCart([]);
-      setSelectedCustomerId("");
+      setSelectedCustomerId("guest");
     } catch (error) {
       console.error("Error creating order:", error);
       toast.error("Failed to complete order");
@@ -302,7 +302,7 @@ const POSSession = () => {
                       <SelectValue placeholder="Select a customer" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Walk-in Customer</SelectItem>
+                      <SelectItem value="guest">Walk-in Customer</SelectItem>
                       {Array.isArray(customers) && customers.map((customer) => (
                         <SelectItem key={customer.id} value={customer.id}>
                           {customer.name}
