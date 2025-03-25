@@ -21,9 +21,10 @@ import { format } from "date-fns";
 
 interface CustomerBalanceProps {
   customer: Customer;
+  onSuccess?: () => void;
 }
 
-const CustomerBalance: React.FC<CustomerBalanceProps> = ({ customer }) => {
+const CustomerBalance: React.FC<CustomerBalanceProps> = ({ customer, onSuccess }) => {
   // Get all orders for this customer that are pending
   const pendingOrders = orders.filter(
     (order) => order.customerId === customer.id && order.status === "pending"
@@ -35,38 +36,34 @@ const CustomerBalance: React.FC<CustomerBalanceProps> = ({ customer }) => {
   );
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline">Balance: ${totalPendingAmount.toFixed(2)}</Button>
-      </DialogTrigger>
-      <DialogContent className="min-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Balance for {customer.name}</DialogTitle>
-        </DialogHeader>
-        <div className="mt-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Pending Payments</h3>
-            <Badge variant="outline" className="text-lg">
-              Total: ${totalPendingAmount.toFixed(2)}
-            </Badge>
-          </div>
+    <div className="mt-4">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Pending Payments</h3>
+        <Badge variant="outline" className="text-lg">
+          Total: ${totalPendingAmount.toFixed(2)}
+        </Badge>
+      </div>
 
-          {pendingOrders.length === 0 ? (
-            <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-muted-foreground">No pending payments</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {pendingOrders.map((order) => (
-                <PendingOrderCard key={order.id} order={order} />
-              ))}
-            </div>
-          )}
+      {pendingOrders.length === 0 ? (
+        <Card>
+          <CardContent className="py-4 text-center">
+            <p className="text-muted-foreground">No pending payments</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {pendingOrders.map((order) => (
+            <PendingOrderCard key={order.id} order={order} />
+          ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+      
+      {onSuccess && (
+        <div className="mt-4 flex justify-end">
+          <Button onClick={onSuccess}>Close</Button>
+        </div>
+      )}
+    </div>
   );
 };
 

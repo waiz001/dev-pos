@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,15 +35,28 @@ import {
 } from "@/utils/excelUtils";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
-// Check if ProductForm has an onSuccess prop in its interface 
-// If not, create a wrapper component
-const ProductFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
-  const handleSuccess = () => {
-    // After submission is successful, call the parent's onSuccess
-    onSuccess();
+// Wrapper component to handle the ProductForm props
+export const ProductFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
+  const handleSubmit = (data: any) => {
+    if (initialData?.id) {
+      // Update existing product
+      updateProduct(initialData.id, data);
+      toast.success("Product updated successfully");
+    } else {
+      // Add new product
+      addProduct({
+        ...data,
+        createdAt: new Date(),
+      });
+      toast.success("Product added successfully");
+    }
+    
+    if (onSuccess) {
+      onSuccess();
+    }
   };
 
-  return <ProductForm initialData={initialData} />;
+  return <ProductForm initialData={initialData} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Product" : "Add Product"} />;
 };
 
 const Products = () => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -21,23 +22,44 @@ import {
 } from "@/components/ui/dialog";
 import {
   addCustomer,
+  updateCustomer,
   customers as allCustomers,
   Customer,
-  updateCustomer,
   deleteCustomer as deleteCustomerData,
 } from "@/utils/data";
 import { toast } from "sonner";
-import { PlusCircle, Pencil, Trash2, User, Wallet } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Wallet } from "lucide-react";
 import CustomerForm from "@/components/forms/CustomerForm";
-import CustomerBalance from "@/components/pos/CustomerBalance";
+import CustomerBalance from "@/components/customers/CustomerBalance";
 
 // Create wrapper components to handle the props mismatch
 const CustomerFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
-  return <CustomerForm initialData={initialData} />;
+  const handleSubmit = (data: any) => {
+    if (initialData?.id) {
+      // Update existing customer
+      updateCustomer(initialData.id, data);
+      toast.success("Customer updated successfully");
+    } else {
+      // Add new customer
+      addCustomer({
+        ...data,
+        registrationDate: new Date(),
+        totalOrders: 0,
+        totalSpent: 0,
+      });
+      toast.success("Customer added successfully");
+    }
+    
+    if (onSuccess) {
+      onSuccess();
+    }
+  };
+
+  return <CustomerForm initialData={initialData} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Customer" : "Add Customer"} />;
 };
 
 const CustomerBalanceWrapper = ({ customer, onSuccess }: { customer: any, onSuccess: () => void }) => {
-  return <CustomerBalance customer={customer} />;
+  return <CustomerBalance customer={customer} onSuccess={onSuccess} />;
 };
 
 const Customers = () => {
@@ -50,6 +72,19 @@ const Customers = () => {
 
   useEffect(() => {
     setCustomers(allCustomers);
+  }, []);
+
+  // Refresh customers when a new customer is added or updated
+  useEffect(() => {
+    const handleCustomerUpdate = () => {
+      setCustomers(allCustomers);
+    };
+
+    window.addEventListener('customer-updated', handleCustomerUpdate);
+    
+    return () => {
+      window.removeEventListener('customer-updated', handleCustomerUpdate);
+    };
   }, []);
 
   const filteredCustomers = customers.filter((customer) =>
