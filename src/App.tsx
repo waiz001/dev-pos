@@ -71,90 +71,90 @@ const ProtectedRoute = ({ children }) => {
 };
 
 // Router with AuthProvider
-const AppWithRouter = () => {
+const AppWithAuth = () => {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/products" 
-            element={
-              <ProtectedRoute>
-                <Products />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/orders" 
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/customers" 
-            element={
-              <ProtectedRoute>
-                <Customers />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/reports" 
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/settings" 
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/users" 
-            element={
-              <ProtectedRoute>
-                <Users />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/pos-session" 
-            element={
-              <ProtectedRoute>
-                <POSSession />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <AuthProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Index />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/products" 
+          element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/orders" 
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/customers" 
+          element={
+            <ProtectedRoute>
+              <Customers />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute>
+              <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/users" 
+          element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/pos-session" 
+          element={
+            <ProtectedRoute>
+              <POSSession />
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+      <Sonner />
+    </AuthProvider>
   );
 };
 
@@ -162,9 +162,9 @@ const AppWithRouter = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AppWithRouter />
-      <Toaster />
-      <Sonner />
+      <BrowserRouter>
+        <AppWithAuth />
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

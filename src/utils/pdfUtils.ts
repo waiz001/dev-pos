@@ -3,25 +3,19 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Order, Customer, Product, paymentMethods } from "./data";
 
-// Add autoTable to jsPDF
-jsPDF.API.autoTable = autoTable;
-
-// Extend the jsPDF type definition to include the autoTable method
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF & {
-      previous: {
-        finalY: number;
-      };
-    };
-  }
+// Extend the jsPDF type definition to include the autoTable method and previousAutoTable property
+interface jsPDFWithAutoTable extends jsPDF {
+  autoTable: typeof autoTable;
+  previousAutoTable?: {
+    finalY: number;
+  };
 }
 
 /**
  * Generate a Daily Sales Report PDF
  */
 export const generateDailySalesReportPDF = (orders: Order[]) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF() as jsPDFWithAutoTable;
   
   // Title
   doc.setFontSize(18);
@@ -62,7 +56,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Orders Table
   doc.setFontSize(14);
-  const finalY = paymentTable.previous.finalY || 70;
+  const finalY = paymentTable.finalY || 70;
   doc.text("Order Details", 14, finalY + 15);
   
   const orderRows = orders.map(order => {
@@ -93,7 +87,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
     orientation: "portrait",
     unit: "mm",
     format: [80, 200] // Receipt width: 80mm (standard thermal receipt width)
-  });
+  }) as jsPDFWithAutoTable;
 
   // Set font sizes
   const titleSize = 12;
@@ -171,7 +165,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Create the items table
-  doc.autoTable({
+  const itemsTable = doc.autoTable({
     startY: yPos,
     head: [["Item", "Price"]],
     body: itemsData,
@@ -188,7 +182,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Get the final Y position after the table
-  yPos = doc.previousAutoTable.finalY + 10;
+  yPos = itemsTable.finalY + 10;
   
   // Total section
   doc.setFontSize(titleSize);
@@ -228,7 +222,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   const taxAmount = order.tax || (order.total * 0.15); // Using 15% if tax not provided
   const baseAmount = order.total - taxAmount;
   
-  doc.autoTable({
+  const taxTable = doc.autoTable({
     startY: yPos,
     head: [["Tax", "Amount", "Base", "Total"]],
     body: [["15%", taxAmount.toFixed(2), baseAmount.toFixed(2), order.total.toFixed(2)]],
@@ -241,7 +235,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Footer with thank you message
-  yPos = doc.previousAutoTable.finalY + 15;
+  yPos = taxTable.finalY + 15;
   doc.setFontSize(normalSize);
   doc.text("Thanks for shopping with us!", xCenter, yPos, { align: "center" });
   

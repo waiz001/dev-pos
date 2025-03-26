@@ -79,6 +79,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         // Ensure we reset to page 1 when viewing a new document
         setPageNumber(1);
         
+        // Safety check for pdfDocument
+        if (!pdfDocument) {
+          console.error('PDF document is undefined or null');
+          setError("PDF document not available");
+          setIsLoading(false);
+          return;
+        }
+        
         // Check if the output method exists
         if (typeof pdfDocument.output === 'function') {
           const dataUrl = pdfDocument.output('dataurlstring');
@@ -90,6 +98,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
       } catch (error) {
         console.error('Error generating PDF URL:', error);
         setError("Failed to generate PDF preview.");
+        setIsLoading(false);
       }
     } else {
       setPdfUrl(null);
