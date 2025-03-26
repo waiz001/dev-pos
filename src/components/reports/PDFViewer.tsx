@@ -53,7 +53,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   
   const handleDownload = () => {
     if (pdfDocument) {
-      pdfDocument.save(filename);
+      try {
+        pdfDocument.save(filename);
+        // Show success message
+        console.log("PDF downloaded successfully");
+      } catch (error) {
+        console.error('Error downloading PDF:', error);
+      }
     }
   };
   

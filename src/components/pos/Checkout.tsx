@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { CartItem, paymentMethods } from "@/utils/data";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { generateOrderReceiptPDF } from "@/utils/pdfUtils";
 
 interface CheckoutProps {
   isOpen: boolean;
@@ -40,9 +41,32 @@ const Checkout: React.FC<CheckoutProps> = ({
     setTimeout(() => {
       setIsProcessing(false);
       try {
-        // Call onConfirm after successfully processing payment, but handle any potential errors
+        // Generate receipt for both customer and merchant
+        const receiptObj = {
+          id: `order-${Date.now()}`,
+          date: new Date(),
+          items: items,
+          total: total,
+          tax: tax,
+          customerName: "Customer",
+          paymentMethod: selectedPayment,
+          status: "completed" as "completed" | "pending" | "cancelled" | "in-progress",
+        };
+        
+        // Generate customer receipt
+        const customerReceipt = generateOrderReceiptPDF(receiptObj);
+        customerReceipt.save("customer_receipt.pdf");
+        
+        // Generate merchant receipt (with "MERCHANT COPY" watermark)
+        const merchantReceipt = generateOrderReceiptPDF({
+          ...receiptObj,
+          isMerchantCopy: true
+        });
+        merchantReceipt.save("merchant_receipt.pdf");
+        
+        // Call onConfirm after successfully processing payment
         onConfirm();
-        toast.success("Payment successful!", {
+        toast.success("Payment successful! Receipts downloaded.", {
           position: "bottom-center"
         });
       } catch (error) {

@@ -150,9 +150,23 @@ const OrderForm: React.FC<OrderFormProps> = ({
       status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
     };
     
-    const pdfDoc = generateOrderReceiptPDF(tempOrder);
-    pdfDoc.output('dataurlnewwindow');
-    toast.success("Slip printed successfully");
+    try {
+      // Generate customer receipt
+      const customerReceipt = generateOrderReceiptPDF(tempOrder);
+      customerReceipt.save("customer_receipt.pdf");
+      
+      // Generate merchant copy
+      const merchantReceipt = generateOrderReceiptPDF({
+        ...tempOrder,
+        isMerchantCopy: true
+      });
+      merchantReceipt.save("merchant_receipt.pdf");
+      
+      toast.success("Receipts generated and downloaded successfully");
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      toast.error("Failed to generate receipts");
+    }
   };
 
   return (

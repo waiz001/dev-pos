@@ -48,7 +48,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   // Payment method table
   const paymentData = paymentMethods.map(method => [
     method.name,
-    `$${paymentSummary[method.id].toFixed(2)}`
+    `$${paymentSummary[method.id]?.toFixed(2) || '0.00'}`
   ]);
   
   const paymentTable = doc.autoTable({
@@ -85,12 +85,24 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
 /**
  * Generate a PDF receipt for an order
  */
-export const generateOrderReceiptPDF = (order: Order) => {
+export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolean }) => {
   const doc = new jsPDF();
   
   // Title
   doc.setFontSize(16);
   doc.text("Receipt", 105, 20, { align: "center" });
+  
+  // If it's a merchant copy, add a watermark
+  if (order.isMerchantCopy) {
+    doc.setTextColor(200, 200, 200);  // Light gray color
+    doc.setFontSize(40);
+    doc.text("MERCHANT COPY", 105, 150, { 
+      align: "center",
+      angle: 45
+    });
+    doc.setTextColor(0, 0, 0);  // Reset to black
+    doc.setFontSize(12);
+  }
   
   // Order Info
   doc.setFontSize(12);
@@ -119,8 +131,13 @@ export const generateOrderReceiptPDF = (order: Order) => {
   });
   
   const finalY = itemsTable.previous.finalY || 95;
-  // Total
-  doc.text(`Total: $${order.total.toFixed(2)}`, 140, finalY + 20, { align: "right" });
+  
+  // Subtotal, Tax, and Total
+  doc.text(`Subtotal: $${(order.total - (order.tax || 0)).toFixed(2)}`, 140, finalY + 15, { align: "right" });
+  if (order.tax) {
+    doc.text(`Tax: $${order.tax.toFixed(2)}`, 140, finalY + 25, { align: "right" });
+  }
+  doc.text(`Total: $${order.total.toFixed(2)}`, 140, finalY + 35, { align: "right" });
   
   // Footer
   doc.setFontSize(10);

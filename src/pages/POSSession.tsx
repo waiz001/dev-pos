@@ -128,17 +128,28 @@ const POSSession = () => {
         
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
-          toast.success("Order completed successfully", {
-            position: "bottom-center"
-          });
           
-          // Try to generate receipt, but don't block completion if it fails
+          // Generate receipts
           try {
-            // Skip PDF generation for now since it's causing errors
-            // generateReceipt(updatedOrder);
-            // setIsPrintDialogOpen(true);
+            // Generate customer receipt
+            const customerReceipt = generateOrderReceiptPDF(updatedOrder);
+            customerReceipt.save("customer_receipt.pdf");
+            
+            // Generate merchant copy
+            const merchantReceipt = generateOrderReceiptPDF({
+              ...updatedOrder,
+              isMerchantCopy: true
+            });
+            merchantReceipt.save("merchant_receipt.pdf");
+            
+            toast.success("Order completed and receipts downloaded", {
+              position: "bottom-center"
+            });
           } catch (error) {
-            console.error("Error generating receipt:", error);
+            console.error("Error generating receipts:", error);
+            toast.error("Order completed but failed to generate receipts", {
+              position: "bottom-center"
+            });
           }
 
           resetCart(); // Start a new order automatically
@@ -150,17 +161,28 @@ const POSSession = () => {
       } else { // Creating a new order
         const order = addOrder(orderData);
         setLastOrderId(order.id);
-        toast.success("Order completed successfully", {
-          position: "bottom-center"
-        });
         
-        // Try to generate receipt, but don't block completion if it fails
+        // Generate receipts
         try {
-          // Skip PDF generation for now since it's causing errors
-          // generateReceipt(order);
-          // setIsPrintDialogOpen(true);
+          // Generate customer receipt
+          const customerReceipt = generateOrderReceiptPDF(order);
+          customerReceipt.save("customer_receipt.pdf");
+          
+          // Generate merchant copy
+          const merchantReceipt = generateOrderReceiptPDF({
+            ...order,
+            isMerchantCopy: true
+          });
+          merchantReceipt.save("merchant_receipt.pdf");
+          
+          toast.success("Order completed and receipts downloaded", {
+            position: "bottom-center"
+          });
         } catch (error) {
-          console.error("Error generating receipt:", error);
+          console.error("Error generating receipts:", error);
+          toast.error("Order completed but failed to generate receipts", {
+            position: "bottom-center"
+          });
         }
 
         resetCart(); // Start a new order automatically
@@ -257,14 +279,23 @@ const POSSession = () => {
     }
     
     try {
-      // Skip PDF generation for now since it's causing errors
-      // We'll provide a simple message instead
-      toast.info("Receipt printing is temporarily unavailable", {
+      // Generate customer receipt
+      const customerReceipt = generateOrderReceiptPDF(orderToPrint);
+      customerReceipt.save("customer_receipt.pdf");
+      
+      // Generate merchant copy
+      const merchantReceipt = generateOrderReceiptPDF({
+        ...orderToPrint,
+        isMerchantCopy: true
+      });
+      merchantReceipt.save("merchant_receipt.pdf");
+      
+      toast.success("Receipts downloaded successfully", {
         position: "bottom-center"
       });
     } catch (error) {
-      console.error("Error generating receipt:", error);
-      toast.error("Failed to generate receipt", {
+      console.error("Error generating receipts:", error);
+      toast.error("Failed to generate receipts", {
         position: "bottom-center"
       });
     }
@@ -278,15 +309,37 @@ const POSSession = () => {
       return;
     }
     
+    const tempOrder = {
+      id: "preview-" + Date.now(),
+      date: new Date(),
+      items: [...cart],
+      total: calculateTotal(),
+      tax: calculateTax(),
+      customerName: selectedCustomerId !== "guest" 
+        ? customers.find(c => c.id === selectedCustomerId)?.name || "Walk-in Customer"
+        : "Walk-in Customer",
+      paymentMethod: selectedPaymentMethod,
+      status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
+    };
+    
     try {
-      // Skip PDF generation for now since it's causing errors
-      // We'll provide a simple message instead
-      toast.info("Receipt printing is temporarily unavailable", {
+      // Generate customer receipt
+      const customerReceipt = generateOrderReceiptPDF(tempOrder);
+      customerReceipt.save("customer_receipt.pdf");
+      
+      // Generate merchant copy
+      const merchantReceipt = generateOrderReceiptPDF({
+        ...tempOrder,
+        isMerchantCopy: true
+      });
+      merchantReceipt.save("merchant_receipt.pdf");
+      
+      toast.success("Receipts downloaded successfully", {
         position: "bottom-center"
       });
     } catch (error) {
       console.error("Error printing slip:", error);
-      toast.error("Failed to print slip", {
+      toast.error("Failed to generate receipts", {
         position: "bottom-center"
       });
     }
@@ -304,11 +357,13 @@ const POSSession = () => {
     }
     
     try {
-      // Skip PDF generation for now since it's causing errors
-      // We'll provide a simple message instead
-      toast.info("Report generation is temporarily unavailable", {
-        position: "bottom-center"
-      });
+      // Generate PDF report
+      const reportPdf = generateDailySalesReportPDF(todaysOrders);
+      
+      // Save the PDF
+      reportPdf.save("daily_sales_report.pdf");
+      
+      toast.success("Sales report downloaded successfully");
     } catch (error) {
       console.error("Error generating report:", error);
       toast.error("Failed to generate report", {
@@ -316,7 +371,7 @@ const POSSession = () => {
       });
     }
   };
-
+  
   const [todayOrders, setTodayOrders] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
 
