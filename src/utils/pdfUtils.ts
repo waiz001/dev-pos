@@ -3,9 +3,14 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Order, Customer, Product, paymentMethods } from "./data";
 
-// Extend the jsPDF type definition to include the autoTable method and previousAutoTable property
+// Extend the jsPDF type definition to include the autoTable method and its return type
+interface AutoTableOutput {
+  finalY: number;
+  startY: number;
+}
+
 interface jsPDFWithAutoTable extends jsPDF {
-  autoTable: typeof autoTable;
+  autoTable: (options: any) => AutoTableOutput;
   previousAutoTable?: {
     finalY: number;
   };
