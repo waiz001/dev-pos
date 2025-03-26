@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -165,6 +166,7 @@ const Products = () => {
         <ImportExcelDialog
           open={isImportDialogOpen}
           onOpenChange={setIsImportDialogOpen}
+          type="products"
           onImportComplete={() => {
             setProducts(allProducts);
           }}
