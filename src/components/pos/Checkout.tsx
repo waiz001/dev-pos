@@ -64,8 +64,9 @@ const Checkout: React.FC<CheckoutProps> = ({
         });
         merchantReceipt.save("merchant_receipt.pdf");
         
-        // Call onConfirm after successfully processing payment
+        // Call onConfirm to clear the cart and start a new order
         onConfirm();
+        
         toast.success("Payment successful! Receipts downloaded.", {
           position: "bottom-center"
         });
