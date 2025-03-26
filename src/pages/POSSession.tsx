@@ -562,7 +562,7 @@ const POSSession = () => {
                       onClick={handleCheckout}
                       disabled={cart.length === 0}
                     >
-                      Complete Sale
+                      Pay
                     </Button>
                   </div>
                 </div>
