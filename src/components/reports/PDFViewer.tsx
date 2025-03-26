@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +9,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 import { ChevronLeft, ChevronRight, Download, Loader2, ZoomIn, ZoomOut } from "lucide-react";
 
 // Set the worker source for react-pdf
@@ -34,6 +39,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [scale, setScale] = useState(1.0);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const previousPage = () => {
     setPageNumber(prev => Math.max(prev - 1, 1));
@@ -55,10 +61,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
     if (pdfDocument) {
       try {
         pdfDocument.save(filename);
-        // Show success message
         console.log("PDF downloaded successfully");
       } catch (error) {
         console.error('Error downloading PDF:', error);
+        setError("Failed to download PDF. Please try again.");
       }
     }
   };
@@ -67,14 +73,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   React.useEffect(() => {
     if (open && pdfDocument) {
       try {
+        setError(null);
         const dataUrl = pdfDocument.output('dataurlstring');
         setPdfUrl(dataUrl);
       } catch (error) {
         console.error('Error generating PDF URL:', error);
+        setError("Failed to generate PDF preview.");
       }
     } else {
       setPdfUrl(null);
       setPageNumber(1);
+      setError(null);
     }
   }, [open, pdfDocument]);
   
@@ -91,7 +100,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         </DialogHeader>
         
         <div className="flex-1 overflow-auto bg-muted/20 rounded-md">
-          {pdfUrl ? (
+          {error ? (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-destructive">{error}</p>
+            </div>
+          ) : pdfUrl ? (
             <div className="h-full flex items-center justify-center">
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-background/50">
@@ -101,7 +114,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
               <Document
                 file={pdfUrl}
                 onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={(error) => console.error('Error loading PDF:', error)}
+                onLoadError={(error) => {
+                  console.error('Error loading PDF:', error);
+                  setError("Failed to load PDF document.");
+                }}
                 className="pdf-document"
               >
                 <Page 
@@ -121,40 +137,68 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
         
         <DialogFooter className="flex sm:justify-between items-center pt-4">
           <div className="flex items-center gap-2">
-            <Button onClick={zoomOut} size="sm" variant="outline">
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button onClick={zoomIn} size="sm" variant="outline">
-              <ZoomIn className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={zoomOut} size="sm" variant="outline">
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom Out</TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={zoomIn} size="sm" variant="outline">
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Zoom In</TooltipContent>
+            </Tooltip>
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={previousPage} 
-              disabled={pageNumber <= 1} 
-              size="sm" 
-              variant="outline"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={previousPage} 
+                  disabled={pageNumber <= 1} 
+                  size="sm" 
+                  variant="outline"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Previous Page</TooltipContent>
+            </Tooltip>
+            
             <span className="text-sm">
               {pageNumber} / {numPages || 1}
             </span>
-            <Button 
-              onClick={nextPage} 
-              disabled={pageNumber >= (numPages || 1)} 
-              size="sm" 
-              variant="outline"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  onClick={nextPage} 
+                  disabled={pageNumber >= (numPages || 1)} 
+                  size="sm" 
+                  variant="outline"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Next Page</TooltipContent>
+            </Tooltip>
           </div>
           
-          <Button onClick={handleDownload} variant="default">
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={handleDownload} variant="default">
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Download PDF</TooltipContent>
+          </Tooltip>
         </DialogFooter>
       </DialogContent>
     </Dialog>

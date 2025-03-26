@@ -150,12 +150,13 @@ const AppWithAuth = () => {
   );
 };
 
+// Fixed App component structure with proper nesting of providers
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <AppWithAuth />
       <Toaster />
       <Sonner />
-      <AppWithAuth />
     </TooltipProvider>
   </QueryClientProvider>
 );
