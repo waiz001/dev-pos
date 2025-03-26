@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -138,6 +139,9 @@ const POSSession = () => {
           });
           merchantReceipt.save("merchant_receipt.pdf");
           
+          // Reset cart and start a new order after successful completion
+          resetCart();
+          
           toast.success("Order completed and receipts downloaded", {
             position: "bottom-center"
           });
@@ -159,6 +163,9 @@ const POSSession = () => {
           isMerchantCopy: true
         });
         merchantReceipt.save("merchant_receipt.pdf");
+        
+        // Reset cart and start a new order after successful completion
+        resetCart();
         
         toast.success("Order completed and receipts downloaded", {
           position: "bottom-center"

@@ -69,6 +69,9 @@ const Checkout: React.FC<CheckoutProps> = ({
         toast.success("Payment successful! Receipts downloaded.", {
           position: "bottom-center"
         });
+        
+        // Close the checkout dialog after successful payment
+        onClose();
       } catch (error) {
         console.error("Error during order confirmation:", error);
         toast.error("Failed to complete order", {

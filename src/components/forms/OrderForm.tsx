@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -128,6 +129,18 @@ const OrderForm: React.FC<OrderFormProps> = ({
       total: calculateTotal(),
       customerName: selectedCustomer?.name || values.customerName || "Guest",
     });
+    
+    // Reset the form and cart after successful submission
+    form.reset({
+      customerId: "",
+      customerName: "",
+      paymentMethod: "cash",
+      notes: "",
+    });
+    setCart([]);
+    setSearchQuery("");
+    
+    toast.success("Order saved successfully");
   };
   
   const printSlip = () => {
