@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import {
@@ -70,12 +70,23 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
   };
   
   // Generate PDF data URL when dialog opens
-  React.useEffect(() => {
+  useEffect(() => {
     if (open && pdfDocument) {
       try {
         setError(null);
-        const dataUrl = pdfDocument.output('dataurlstring');
-        setPdfUrl(dataUrl);
+        setIsLoading(true);
+        
+        // Ensure we reset to page 1 when viewing a new document
+        setPageNumber(1);
+        
+        // Check if the output method exists
+        if (typeof pdfDocument.output === 'function') {
+          const dataUrl = pdfDocument.output('dataurlstring');
+          setPdfUrl(dataUrl);
+        } else {
+          console.error('PDF document does not have output method');
+          setError("Invalid PDF document format");
+        }
       } catch (error) {
         console.error('Error generating PDF URL:', error);
         setError("Failed to generate PDF preview.");
@@ -117,6 +128,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                 onLoadError={(error) => {
                   console.error('Error loading PDF:', error);
                   setError("Failed to load PDF document.");
+                  setIsLoading(false);
                 }}
                 className="pdf-document"
               >
@@ -125,6 +137,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({
                   scale={scale}
                   renderTextLayer={false}
                   renderAnnotationLayer={false}
+                  onRenderSuccess={() => setIsLoading(false)}
+                  onRenderError={() => {
+                    setError("Failed to render PDF page.");
+                    setIsLoading(false);
+                  }}
                 />
               </Document>
             </div>

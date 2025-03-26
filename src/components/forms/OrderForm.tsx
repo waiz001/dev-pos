@@ -165,7 +165,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
       toast.success("Receipts generated and downloaded successfully");
     } catch (error) {
       console.error("Error generating receipt:", error);
-      toast.error("Failed to generate receipts");
+      toast.error("Failed to generate receipts. Please try again.");
     }
   };
 

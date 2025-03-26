@@ -1,7 +1,10 @@
 
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { Order, Customer, Product, paymentMethods } from "./data";
+
+// Add autoTable to jsPDF
+jsPDF.API.autoTable = autoTable;
 
 // Extend the jsPDF type definition to include the autoTable method
 declare module "jspdf" {
@@ -86,62 +89,161 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
  * Generate a PDF receipt for an order
  */
 export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolean }) => {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: [80, 200] // Receipt width: 80mm (standard thermal receipt width)
+  });
+
+  // Set font sizes
+  const titleSize = 12;
+  const normalSize = 9;
+  const smallSize = 8;
   
-  // Title
-  doc.setFontSize(16);
-  doc.text("Receipt", 105, 20, { align: "center" });
+  // Position tracking
+  let yPos = 10;
+  const xCenter = 40; // Center of the receipt
+  const xLeft = 5;
+  const xRight = 75;
+  
+  // Company Info
+  doc.setFontSize(titleSize);
+  doc.setFont("helvetica", "bold");
+  doc.text("Your Company", xCenter, yPos, { align: "center" });
+  
+  // Contact Information
+  yPos += 7;
+  doc.setFontSize(normalSize);
+  doc.setFont("helvetica", "normal");
+  doc.text("Tel:+5 555-555-5555", xCenter, yPos, { align: "center" });
+  
+  yPos += 5;
+  doc.text("Tax ID: US12345671", xCenter, yPos, { align: "center" });
+  
+  yPos += 5;
+  doc.text("info@yourcompany.com", xCenter, yPos, { align: "center" });
+  
+  yPos += 5;
+  doc.text("http://www.example.com", xCenter, yPos, { align: "center" });
+  
+  // Server Information
+  yPos += 10;
+  doc.text(`Served by ${order.isMerchantCopy ? 'Staff' : order.customerName}`, xCenter, yPos, { align: "center" });
+  
+  // Order number
+  yPos += 10;
+  doc.setFontSize(titleSize);
+  doc.setFont("helvetica", "bold");
+  doc.text(order.id.substring(0, 3), xCenter, yPos, { align: "center" });
   
   // If it's a merchant copy, add a watermark
   if (order.isMerchantCopy) {
     doc.setTextColor(200, 200, 200);  // Light gray color
-    doc.setFontSize(40);
-    doc.text("MERCHANT COPY", 105, 150, { 
+    doc.setFontSize(20);
+    doc.text("MERCHANT COPY", xCenter, 120, { 
       align: "center",
       angle: 45
     });
     doc.setTextColor(0, 0, 0);  // Reset to black
-    doc.setFontSize(12);
   }
-  
-  // Order Info
-  doc.setFontSize(12);
-  doc.text(`Order #: ${order.id.substring(0, 8)}`, 14, 40);
-  doc.text(`Date: ${new Date(order.date).toLocaleString()}`, 14, 50);
-  doc.text(`Customer: ${order.customerName || "Walk-in Customer"}`, 14, 60);
-  
-  const paymentMethod = paymentMethods.find(p => p.id === order.paymentMethod);
-  doc.text(`Payment Method: ${paymentMethod ? paymentMethod.name : order.paymentMethod}`, 14, 70);
   
   // Items
-  doc.setFontSize(14);
-  doc.text("Items", 14, 90);
+  yPos += 15;
+  doc.setFontSize(normalSize);
+  doc.setFont("helvetica", "normal");
   
-  const itemRows = order.items.map(item => [
-    item.name,
-    item.quantity.toString(),
-    `$${item.price.toFixed(2)}`,
-    `$${(item.price * item.quantity).toFixed(2)}`
-  ]);
+  // Items table with columns for description and price
+  let itemsData = [];
   
-  const itemsTable = doc.autoTable({
-    startY: 95,
-    head: [["Item", "Qty", "Price", "Total"]],
-    body: itemRows,
+  // Add each item to the table
+  order.items.forEach(item => {
+    // Add the item name and price
+    itemsData.push([
+      `${item.name}`,
+      `$ ${item.price.toFixed(2)}`
+    ]);
+    
+    // Add the quantity and subtotal on next line, indented
+    itemsData.push([
+      `  ${item.quantity.toFixed(2)} Units x $ ${item.price.toFixed(2)}`,
+      ``
+    ]);
   });
   
-  const finalY = itemsTable.previous.finalY || 95;
+  // Create the items table
+  doc.autoTable({
+    startY: yPos,
+    head: [["Item", "Price"]],
+    body: itemsData,
+    theme: 'plain',
+    styles: {
+      fontSize: normalSize,
+      cellPadding: 2,
+    },
+    columnStyles: {
+      0: { cellWidth: 50 },
+      1: { cellWidth: 20, halign: 'right' }
+    },
+    margin: { left: xLeft, right: 5 },
+  });
   
-  // Subtotal, Tax, and Total
-  doc.text(`Subtotal: $${(order.total - (order.tax || 0)).toFixed(2)}`, 140, finalY + 15, { align: "right" });
-  if (order.tax) {
-    doc.text(`Tax: $${order.tax.toFixed(2)}`, 140, finalY + 25, { align: "right" });
+  // Get the final Y position after the table
+  yPos = doc.previousAutoTable.finalY + 10;
+  
+  // Total section
+  doc.setFontSize(titleSize);
+  doc.setFont("helvetica", "bold");
+  doc.text("TOTAL", xLeft, yPos);
+  doc.text(`$ ${order.total.toFixed(2)}`, xRight, yPos, { align: "right" });
+  
+  // Payment details
+  yPos += 8;
+  doc.setFontSize(normalSize);
+  doc.setFont("helvetica", "normal");
+  const paymentMethod = paymentMethods.find(p => p.id === order.paymentMethod);
+  doc.text(paymentMethod ? paymentMethod.name : order.paymentMethod, xLeft, yPos);
+  
+  // Cash amount given and change (for cash payments)
+  if (order.paymentMethod === "cash") {
+    // Example values, in a real app these would come from the payment data
+    const cashGiven = order.total + 12.05; // Adding example change amount
+    const change = cashGiven - order.total;
+    
+    yPos += 8;
+    doc.text("Cash", xLeft, yPos);
+    doc.text(cashGiven.toFixed(2), xRight, yPos, { align: "right" });
+    
+    yPos += 8;
+    doc.setFont("helvetica", "bold");
+    doc.text("CHANGE", xLeft, yPos);
+    doc.text(`$ ${change.toFixed(2)}`, xRight, yPos, { align: "right" });
   }
-  doc.text(`Total: $${order.total.toFixed(2)}`, 140, finalY + 35, { align: "right" });
   
-  // Footer
-  doc.setFontSize(10);
-  doc.text("Thank you for your business!", 105, 270, { align: "center" });
+  // Tax breakdown
+  yPos += 12;
+  doc.setFontSize(normalSize);
+  doc.setFont("helvetica", "normal");
+  
+  // Tax table
+  const taxAmount = order.tax || (order.total * 0.15); // Using 15% if tax not provided
+  const baseAmount = order.total - taxAmount;
+  
+  doc.autoTable({
+    startY: yPos,
+    head: [["Tax", "Amount", "Base", "Total"]],
+    body: [["15%", taxAmount.toFixed(2), baseAmount.toFixed(2), order.total.toFixed(2)]],
+    theme: 'plain',
+    styles: {
+      fontSize: normalSize,
+      cellPadding: 2,
+    },
+    margin: { left: xLeft, right: 5 },
+  });
+  
+  // Footer with thank you message
+  yPos = doc.previousAutoTable.finalY + 15;
+  doc.setFontSize(normalSize);
+  doc.text("Thanks for shopping with us!", xCenter, yPos, { align: "center" });
   
   return doc;
 };

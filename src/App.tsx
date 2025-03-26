@@ -22,7 +22,15 @@ import POSSession from "./pages/POSSession";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Create QueryClient outside of component to avoid recreation on re-renders
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // ProtectedRoute component to handle authentication
 const ProtectedRoute = ({ children }) => {
@@ -63,7 +71,7 @@ const ProtectedRoute = ({ children }) => {
 };
 
 // Router with AuthProvider
-const AppWithAuth = () => {
+const AppWithRouter = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -154,7 +162,7 @@ const AppWithAuth = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AppWithAuth />
+      <AppWithRouter />
       <Toaster />
       <Sonner />
     </TooltipProvider>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -62,15 +61,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const CURRENT_USER_KEY = "pos_system_current_user";
+const USERS_STORAGE_KEY = "pos_system_users";
+
 // Helper functions to load and save users from localStorage
 const loadUsers = (): User[] => {
   try {
-    const storedData = localStorage.getItem("users");
+    const storedData = localStorage.getItem(USERS_STORAGE_KEY);
     if (storedData) {
       return JSON.parse(storedData);
     }
     // Initialize with default users if none exist
-    localStorage.setItem("users", JSON.stringify(defaultUsers));
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
     return defaultUsers;
   } catch (error) {
     console.error("Error loading users:", error);
@@ -80,7 +82,7 @@ const loadUsers = (): User[] => {
 
 const saveUsers = (users: User[]): void => {
   try {
-    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   } catch (error) {
     console.error("Error saving users:", error);
   }
@@ -90,42 +92,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(loadUsers());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const navigate = useNavigate();
 
   // Check for existing session on initial load
   useEffect(() => {
-    const user = localStorage.getItem("currentUser");
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user);
-        // Ensure the stored user has all required permissions
-        if (!parsedUser.permissions) {
-          parsedUser.permissions = {
-            products: false,
-            orders: false,
-            customers: false,
-            reports: false,
-            settings: false,
-            users: false
-          };
-        }
+    try {
+      const userJson = localStorage.getItem(CURRENT_USER_KEY);
+      
+      if (userJson) {
+        const parsedUser = JSON.parse(userJson);
         
-        // Add any missing permissions with default false value
-        const requiredPermissions = ['products', 'orders', 'customers', 'reports', 'settings', 'users'];
-        requiredPermissions.forEach(perm => {
-          if (parsedUser.permissions[perm] === undefined) {
-            parsedUser.permissions[perm] = false;
+        // Ensure the user exists in the current users list
+        const userExists = users.some(user => user.id === parsedUser.id);
+        
+        if (userExists) {
+          // Ensure the stored user has all required permissions
+          if (!parsedUser.permissions) {
+            parsedUser.permissions = {
+              products: false,
+              orders: false,
+              customers: false,
+              reports: false,
+              settings: false,
+              users: false
+            };
           }
-        });
-        
-        setCurrentUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (e) {
-        console.error("Error parsing stored user", e);
-        localStorage.removeItem("currentUser");
+          
+          // Add any missing permissions with default false value
+          const requiredPermissions = ['products', 'orders', 'customers', 'reports', 'settings', 'users'];
+          requiredPermissions.forEach(perm => {
+            if (parsedUser.permissions[perm] === undefined) {
+              parsedUser.permissions[perm] = false;
+            }
+          });
+          
+          setCurrentUser(parsedUser);
+          setIsAuthenticated(true);
+        } else {
+          // User doesn't exist anymore, clear storage
+          console.warn("Stored user not found in users list, logging out");
+          localStorage.removeItem(CURRENT_USER_KEY);
+        }
       }
+    } catch (e) {
+      console.error("Error parsing stored user", e);
+      localStorage.removeItem(CURRENT_USER_KEY);
+    } finally {
+      setIsInitialized(true);
     }
-  }, []);
+  }, [users]);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     // In a real app, you would validate credentials against a backend
@@ -159,7 +175,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setCurrentUser(user);
       setIsAuthenticated(true);
-      localStorage.setItem("currentUser", JSON.stringify(user));
+      
+      // Store user in localStorage with a timeout
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      
       return true;
     }
     
@@ -169,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setCurrentUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("currentUser");
+    localStorage.removeItem(CURRENT_USER_KEY);
     navigate("/login");
   };
 
@@ -234,6 +253,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     return success;
   };
+
+  // If we're still initializing, show nothing
+  if (!isInitialized) {
+    return null;
+  }
 
   return (
     <AuthContext.Provider

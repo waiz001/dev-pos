@@ -119,7 +119,6 @@ const POSSession = () => {
     };
     
     try {
-      // If we're updating an existing in-progress order
       if (currentOrderId) {
         const updatedOrder = updateOrder(currentOrderId, {
           ...orderData,
@@ -129,48 +128,12 @@ const POSSession = () => {
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
           
-          // Generate receipts
-          try {
-            // Generate customer receipt
-            const customerReceipt = generateOrderReceiptPDF(updatedOrder);
-            customerReceipt.save("customer_receipt.pdf");
-            
-            // Generate merchant copy
-            const merchantReceipt = generateOrderReceiptPDF({
-              ...updatedOrder,
-              isMerchantCopy: true
-            });
-            merchantReceipt.save("merchant_receipt.pdf");
-            
-            toast.success("Order completed and receipts downloaded", {
-              position: "bottom-center"
-            });
-          } catch (error) {
-            console.error("Error generating receipts:", error);
-            toast.error("Order completed but failed to generate receipts", {
-              position: "bottom-center"
-            });
-          }
-
-          resetCart(); // Start a new order automatically
-        } else {
-          toast.error("Failed to update order", {
-            position: "bottom-center"
-          });
-        }
-      } else { // Creating a new order
-        const order = addOrder(orderData);
-        setLastOrderId(order.id);
-        
-        // Generate receipts
-        try {
-          // Generate customer receipt
-          const customerReceipt = generateOrderReceiptPDF(order);
+          const customerReceipt = generateOrderReceiptPDF(updatedOrder);
+          setPdfDocument(customerReceipt);
           customerReceipt.save("customer_receipt.pdf");
           
-          // Generate merchant copy
           const merchantReceipt = generateOrderReceiptPDF({
-            ...order,
+            ...updatedOrder,
             isMerchantCopy: true
           });
           merchantReceipt.save("merchant_receipt.pdf");
@@ -178,14 +141,28 @@ const POSSession = () => {
           toast.success("Order completed and receipts downloaded", {
             position: "bottom-center"
           });
-        } catch (error) {
-          console.error("Error generating receipts:", error);
-          toast.error("Order completed but failed to generate receipts", {
+        } else {
+          toast.error("Failed to update order", {
             position: "bottom-center"
           });
         }
-
-        resetCart(); // Start a new order automatically
+      } else {
+        const order = addOrder(orderData);
+        setLastOrderId(order.id);
+        
+        const customerReceipt = generateOrderReceiptPDF(order);
+        setPdfDocument(customerReceipt);
+        customerReceipt.save("customer_receipt.pdf");
+        
+        const merchantReceipt = generateOrderReceiptPDF({
+          ...order,
+          isMerchantCopy: true
+        });
+        merchantReceipt.save("merchant_receipt.pdf");
+        
+        toast.success("Order completed and receipts downloaded", {
+          position: "bottom-center"
+        });
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -279,23 +256,24 @@ const POSSession = () => {
     }
     
     try {
-      // Generate customer receipt
       const customerReceipt = generateOrderReceiptPDF(orderToPrint);
+      setPdfDocument(customerReceipt);
       customerReceipt.save("customer_receipt.pdf");
       
-      // Generate merchant copy
       const merchantReceipt = generateOrderReceiptPDF({
         ...orderToPrint,
         isMerchantCopy: true
       });
       merchantReceipt.save("merchant_receipt.pdf");
       
+      setIsPrintDialogOpen(true);
+      
       toast.success("Receipts downloaded successfully", {
         position: "bottom-center"
       });
     } catch (error) {
       console.error("Error generating receipts:", error);
-      toast.error("Failed to generate receipts", {
+      toast.error("Failed to generate receipts. Please try again.", {
         position: "bottom-center"
       });
     }
@@ -309,37 +287,40 @@ const POSSession = () => {
       return;
     }
     
+    const selectedCustomer = selectedCustomerId !== "guest" 
+      ? customers.find(c => c.id === selectedCustomerId) 
+      : null;
+    
     const tempOrder = {
       id: "preview-" + Date.now(),
       date: new Date(),
       items: [...cart],
       total: calculateTotal(),
       tax: calculateTax(),
-      customerName: selectedCustomerId !== "guest" 
-        ? customers.find(c => c.id === selectedCustomerId)?.name || "Walk-in Customer"
-        : "Walk-in Customer",
+      customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: selectedPaymentMethod,
       status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
     };
     
     try {
-      // Generate customer receipt
       const customerReceipt = generateOrderReceiptPDF(tempOrder);
+      setPdfDocument(customerReceipt);
       customerReceipt.save("customer_receipt.pdf");
       
-      // Generate merchant copy
       const merchantReceipt = generateOrderReceiptPDF({
         ...tempOrder,
         isMerchantCopy: true
       });
       merchantReceipt.save("merchant_receipt.pdf");
       
+      setIsPrintDialogOpen(true);
+      
       toast.success("Receipts downloaded successfully", {
         position: "bottom-center"
       });
     } catch (error) {
       console.error("Error printing slip:", error);
-      toast.error("Failed to generate receipts", {
+      toast.error("Failed to generate receipts. Please try again.", {
         position: "bottom-center"
       });
     }
@@ -357,10 +338,8 @@ const POSSession = () => {
     }
     
     try {
-      // Generate PDF report
       const reportPdf = generateDailySalesReportPDF(todaysOrders);
       
-      // Save the PDF
       reportPdf.save("daily_sales_report.pdf");
       
       toast.success("Sales report downloaded successfully");
