@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import ProductForm from "./ProductForm";
-import { addProduct, products } from "@/utils/data";
+import { addProduct } from "@/utils/data";
 import { toast } from "sonner";
 
 const AddProductButton = () => {
@@ -21,7 +21,7 @@ const AddProductButton = () => {
       setIsOpen(false);
       toast.success(`Product "${newProduct.name}" added successfully`);
       
-      // Force a rerender of the products page by dispatching a custom event
+      // Force a rerender by reloading the data without refreshing the page
       window.dispatchEvent(new CustomEvent('product-updated'));
     } catch (error) {
       toast.error("Failed to add product");

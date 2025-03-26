@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -19,7 +18,6 @@ import { PlusCircle, Pencil, Trash2, FileDown, FileUp } from "lucide-react";
 import ProductForm from "@/components/forms/ProductForm";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
-// Create wrapper components to handle the props mismatch
 const ProductFormWrapper = ({ initialData, onSuccess }) => {
   const onSubmit = (formData) => {
     try {
@@ -53,6 +51,16 @@ const Products = () => {
 
   useEffect(() => {
     setProducts(allProducts);
+    
+    const handleProductUpdated = () => {
+      setProducts([...allProducts]);
+    };
+    
+    window.addEventListener('product-updated', handleProductUpdated);
+    
+    return () => {
+      window.removeEventListener('product-updated', handleProductUpdated);
+    };
   }, []);
 
   const filteredProducts = useMemo(() => {

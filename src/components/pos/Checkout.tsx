@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Check, CreditCard, DollarSign, X } from "lucide-react";
 import {
