@@ -116,7 +116,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Add the orders table
   if (orderRows.length > 0) {
-    autoTable(doc, {
+    doc.autoTable({
       startY: yPos + 5,
       head: [["Order ID", "Customer", "Date", "Payment", "Store", "Total"]],
       body: orderRows,
