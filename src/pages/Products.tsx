@@ -26,11 +26,18 @@ import * as XLSX from 'xlsx';
 const ProductFormWrapper = ({ initialData, onSuccess }) => {
   const onSubmit = (formData) => {
     try {
-      if (initialData) {
-        updateProductData(initialData.id, formData);
+      console.log("ProductFormWrapper onSubmit - initialData:", initialData);
+      console.log("ProductFormWrapper onSubmit - formData:", formData);
+      
+      if (initialData && initialData.id) {
+        // Update existing product
+        const updatedProduct = updateProductData(initialData.id, formData);
+        console.log("Updated product:", updatedProduct);
         toast.success("Product updated successfully");
       } else {
-        addProductData(formData);
+        // Add new product
+        const newProduct = addProductData(formData);
+        console.log("New product:", newProduct);
         toast.success("Product added successfully");
       }
       
@@ -46,7 +53,7 @@ const ProductFormWrapper = ({ initialData, onSuccess }) => {
     }
   };
 
-  return <ProductForm initialData={initialData} onSubmit={onSubmit} />;
+  return <ProductForm initialData={initialData} onSubmit={onSubmit} buttonText={initialData?.id ? "Update Product" : "Add Product"} />;
 };
 
 const Products = () => {
@@ -56,7 +63,6 @@ const Products = () => {
   const [open, setOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [stores, setStores] = useState([]);
 
   // This effect will run once on component mount and set up the event listener
   useEffect(() => {
@@ -69,7 +75,6 @@ const Products = () => {
     
     // Initial load
     setProducts([...allProducts]);
-    setStores(stores);
     
     // Cleanup
     return () => {
@@ -101,6 +106,7 @@ const Products = () => {
   };
 
   const handleEdit = (product: any) => {
+    console.log("Edit product:", product);
     setEditProduct(product);
     handleOpen();
   };
@@ -203,7 +209,7 @@ const Products = () => {
         </Card>
 
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
               <DialogTitle>{editProduct ? "Edit Product" : "Add Product"}</DialogTitle>
               <DialogDescription>

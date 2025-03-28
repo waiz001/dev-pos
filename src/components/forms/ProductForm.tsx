@@ -73,7 +73,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
   });
 
   const handleSubmit = (values: ProductFormValues) => {
+    // Log the form values and initialData to debug edit functionality
+    console.log("Form values:", values);
+    console.log("Initial data:", initialData);
+    
+    // Call the onSubmit function with the values
     onSubmit(values);
+    
+    // Show success toast
     toast.success(`Product ${initialData.id ? "updated" : "created"} successfully`);
   };
 

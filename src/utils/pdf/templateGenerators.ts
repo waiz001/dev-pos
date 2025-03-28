@@ -1,35 +1,69 @@
 
-/**
- * Generate Products Template for Excel Import
- */
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Product, categories, stores } from '@/utils/data';
+
+// Template for products import
 export const generateProductsTemplate = () => {
-  const headers = ["name", "price", "category", "description", "barcode", "inStock", "storeId", "image"];
-  const sampleProduct = {
-    name: "Sample Product",
-    price: 9.99,
-    category: "electronics",
-    description: "Sample description",
-    barcode: "123456789",
-    inStock: 100,
-    storeId: "store-1",
-    image: "https://example.com/image.jpg"
+  // Define the headers and sample data for product import template
+  return {
+    headers: ["name", "price", "category", "description", "barcode", "inStock", "storeId", "image"],
+    data: [
+      ["Sample Product", "9.99", "electronics", "Sample description", "12345678", "100", "store-1", "https://example.com/image.jpg"]
+    ]
   };
-  
-  return { headers, data: [Object.values(sampleProduct)] };
 };
 
-/**
- * Generate Customers Template for Excel Import
- */
-export const generateCustomersTemplate = () => {
-  const headers = ["name", "email", "phone", "address", "notes"];
-  const sampleCustomer = {
-    name: "John Doe",
-    email: "john@example.com", 
-    phone: "555-123-4567",
-    address: "123 Main St, Anytown",
-    notes: "Sample customer notes"
-  };
+// PDF template for product catalog
+export const generateProductCatalogPdf = (products: Product[]): jsPDF => {
+  const doc = new jsPDF();
   
-  return { headers, data: [Object.values(sampleCustomer)] };
+  // Add the title
+  doc.setFontSize(18);
+  doc.text("Product Catalog", 14, 22);
+  
+  // Add date generated
+  doc.setFontSize(10);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 30);
+  
+  // Prepare table data
+  const tableHeaders = ["Name", "Category", "Price", "In Stock", "Barcode"];
+  
+  const tableData = products.map((product) => {
+    // Find category name
+    const category = categories.find(c => c.id === product.category);
+    // Find store name if applicable
+    const store = product.storeId ? stores.find(s => s.id === product.storeId) : null;
+    
+    return [
+      product.name,
+      category ? category.name : 'N/A',
+      `$${product.price.toFixed(2)}`,
+      product.inStock.toString(),
+      product.barcode || 'N/A'
+    ];
+  });
+  
+  // Use autoTable with configuration object syntax
+  doc.autoTable({
+    startY: 35,
+    head: [tableHeaders],
+    body: tableData,
+    theme: 'grid',
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [41, 128, 185] },
+    alternateRowStyles: { fillColor: [245, 245, 245] }
+  });
+  
+  return doc;
+};
+
+// Template for customers import
+export const generateCustomersTemplate = () => {
+  return {
+    headers: ["name", "email", "phone", "address", "notes"],
+    data: [
+      ["John Doe", "john@example.com", "555-123-4567", "123 Main St, Anytown", "VIP customer"]
+    ]
+  };
 };
