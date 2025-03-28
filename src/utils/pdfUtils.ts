@@ -1,3 +1,4 @@
+
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Order, Customer, Product, paymentMethods, stores } from "./data";
@@ -51,7 +52,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Add the payment method table
   if (paymentData.length > 0) {
-    // FIX: Use correct autoTable call as a method on doc
+    // Fix: Use autoTable as a method with a single configuration object
     doc.autoTable({
       startY: 70,
       head: [["Payment Method", "Amount"]],
@@ -86,7 +87,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
     
     // Add the store table
     if (storeData.length > 0) {
-      // FIX: Use correct autoTable call as a method on doc
+      // Fix: Use autoTable as a method with a single configuration object
       doc.autoTable({
         startY: yPos,
         head: [["Store", "Amount"]],
@@ -117,7 +118,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Add the orders table
   if (orderRows.length > 0) {
-    // FIX: Use correct autoTable call as a method on doc
+    // Fix: Use autoTable as a method with a single configuration object
     doc.autoTable({
       startY: yPos + 5,
       head: [["Order ID", "Customer", "Date", "Payment", "Store", "Total"]],
@@ -231,7 +232,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Create the items table
-  // FIX: Use correct autoTable call as a method on doc
+  // Fix: Use autoTable as a method with a single configuration object
   doc.autoTable({
     startY: yPos,
     theme: 'plain',
