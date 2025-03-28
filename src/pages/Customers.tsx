@@ -1,18 +1,24 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  customers as allCustomers, 
+  deleteCustomer, 
+  updateCustomer 
+} from "@/utils/data";
+import { toast } from "sonner";
+import { PlusCircle, Pencil, Trash2, FileUp, Download } from "lucide-react";
+import { generateCustomersTemplate } from "@/utils/pdfUtils";
+import * as XLSX from 'xlsx';
+
+// Import CustomerForm and AddCustomerButton from your components directory
+import CustomerForm from "@/components/forms/CustomerForm";
+import AddCustomerButton from "@/components/forms/AddCustomerButton";
 import {
   Dialog,
   DialogContent,
@@ -20,125 +26,109 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  addCustomer,
-  updateCustomer,
-  customers as allCustomers,
-  Customer,
-  deleteCustomer as deleteCustomerData,
-} from "@/utils/data";
-import { toast } from "sonner";
-import { PlusCircle, Pencil, Trash2, Wallet } from "lucide-react";
-import CustomerForm from "@/components/forms/CustomerForm";
-import CustomerBalance from "@/components/customers/CustomerBalance";
-import AddCustomerButton from "@/components/forms/AddCustomerButton";
-
-// Create wrapper components to handle the props mismatch
-const CustomerFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
-  const handleSubmit = (data: any) => {
-    if (initialData?.id) {
-      // Update existing customer
-      updateCustomer(initialData.id, data);
-      toast.success("Customer updated successfully");
-    } else {
-      // Add new customer
-      addCustomer({
-        ...data,
-        registrationDate: new Date(),
-        totalOrders: 0,
-        totalSpent: 0,
-      });
-      toast.success("Customer added successfully");
-    }
-    
-    if (onSuccess) {
-      onSuccess();
-    }
-    
-    // Dispatch event to update the customer list
-    window.dispatchEvent(new CustomEvent('customer-updated'));
-  };
-
-  return <CustomerForm initialData={initialData || {}} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Customer" : "Add Customer"} />;
-};
-
-const CustomerBalanceWrapper = ({ customer, onSuccess }: { customer: any, onSuccess: () => void }) => {
-  return <CustomerBalance customer={customer} onSuccess={onSuccess} />;
-};
+import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 
 const Customers = () => {
   const navigate = useNavigate();
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customers, setCustomers] = useState(allCustomers);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isCustomerFormOpen, setIsCustomerFormOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
-  // This effect will run once on component mount and set up the event listener
+  // Update customers list when a new customer is added or updated
   useEffect(() => {
-    const handleCustomerUpdate = () => {
+    const handleCustomerUpdated = () => {
       setCustomers([...allCustomers]);
     };
     
     // Add event listener
-    window.addEventListener('customer-updated', handleCustomerUpdate);
+    window.addEventListener('customer-updated', handleCustomerUpdated);
     
     // Initial load
     setCustomers([...allCustomers]);
     
     // Cleanup
     return () => {
-      window.removeEventListener('customer-updated', handleCustomerUpdate);
+      window.removeEventListener('customer-updated', handleCustomerUpdated);
     };
   }, []);
 
-  const filteredCustomers = customers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCustomers = useMemo(() => {
+    return customers.filter((customer) =>
+      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [customers, searchQuery]);
 
-  const handleAddCustomer = () => {
-    setSelectedCustomer(null);
-    setIsCustomerFormOpen(true);
-  };
-
-  const handleEditCustomer = (customer: Customer) => {
+  const handleEditCustomer = (customer) => {
     setSelectedCustomer(customer);
-    setIsCustomerFormOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const handleDeleteCustomer = (id: string) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this customer?");
-    if (confirmDelete) {
-      const success = deleteCustomerData(id);
-      if (success) {
-        setCustomers([...allCustomers]);
-        toast.success("Customer deleted successfully");
-      } else {
-        toast.error("Failed to delete customer");
-      }
+  const handleDeleteCustomer = (id) => {
+    try {
+      deleteCustomer(id);
+      setCustomers(customers.filter(customer => customer.id !== id));
+      toast.success("Customer deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete customer:", error);
+      toast.error("Failed to delete customer");
     }
   };
 
-  const handleBalance = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setIsBalanceDialogOpen(true);
+  const handleSubmitEdit = (data) => {
+    try {
+      if (selectedCustomer) {
+        updateCustomer(selectedCustomer.id, data);
+        toast.success("Customer updated successfully");
+        setCustomers([...allCustomers]);
+        setIsDialogOpen(false);
+        setSelectedCustomer(null);
+      }
+    } catch (error) {
+      console.error("Failed to update customer:", error);
+      toast.error("Failed to update customer");
+    }
+  };
+
+  // Download template function
+  const downloadCustomerTemplate = () => {
+    try {
+      const template = generateCustomersTemplate();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([template.headers, ...template.data]);
+      XLSX.utils.book_append_sheet(wb, ws, "Customers");
+      XLSX.writeFile(wb, "customer_import_template.xlsx");
+      toast.success("Template downloaded successfully");
+    } catch (error) {
+      console.error("Error generating template:", error);
+      toast.error("Failed to download template");
+    }
   };
 
   return (
     <MainLayout>
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
+      <div className="container mx-auto py-10">
+        <div className="mb-6 flex justify-between">
           <h1 className="text-3xl font-bold">Customers</h1>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center space-x-4">
             <Input
-              type="search"
+              type="text"
               placeholder="Search customers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="max-w-sm"
+              className="max-w-md"
             />
-            <AddCustomerButton />
-            <Button onClick={() => navigate("/")}>Back to Dashboard</Button>
+            <Button variant="outline" onClick={downloadCustomerTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </Button>
+            <Button onClick={() => setIsImportDialogOpen(true)}>
+              <FileUp className="mr-2 h-4 w-4" />
+              Import Excel
+            </Button>
+            <AddCustomerButton onCustomerAdded={() => setCustomers([...allCustomers])} />
           </div>
         </div>
 
@@ -147,92 +137,76 @@ const Customers = () => {
             <CardTitle>Customer List</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Registration Date</TableHead>
-                    <TableHead>Actions</TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Address</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCustomers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{customer.address}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditCustomer(customer)}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCustomer(customer.id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell>{customer.name}</TableCell>
-                      <TableCell>{customer.email}</TableCell>
-                      <TableCell>{customer.phone || "N/A"}</TableCell>
-                      <TableCell>
-                        {customer.registrationDate.toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditCustomer(customer)}
-                          >
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleBalance(customer)}
-                          >
-                            <Wallet className="mr-2 h-4 w-4" />
-                            Balance
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteCustomer(customer.id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
 
-      <Dialog open={isCustomerFormOpen} onOpenChange={setIsCustomerFormOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>
-              {selectedCustomer ? "Edit Customer" : "Add Customer"}
-            </DialogTitle>
+            <DialogTitle>Edit Customer</DialogTitle>
             <DialogDescription>
-              {selectedCustomer
-                ? "Update customer information here."
-                : "Enter the customer details below."}
+              Make changes to the customer information.
             </DialogDescription>
           </DialogHeader>
-          <CustomerFormWrapper initialData={selectedCustomer} onSuccess={() => setIsCustomerFormOpen(false)} />
+          <div className="py-4">
+            <CustomerForm
+              initialData={selectedCustomer}
+              onSubmit={handleSubmitEdit}
+              buttonText="Update Customer"
+            />
+          </div>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Customer Balance</DialogTitle>
-            <DialogDescription>
-              View and manage customer balance.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedCustomer && (
-            <CustomerBalanceWrapper customer={selectedCustomer} onSuccess={() => setIsBalanceDialogOpen(false)} />
-          )}
-        </DialogContent>
-      </Dialog>
+      <ImportExcelDialog
+        open={isImportDialogOpen}
+        onOpenChange={setIsImportDialogOpen}
+        type="customers"
+        onImportComplete={() => {
+          setCustomers([...allCustomers]);
+          toast.success("Customers imported successfully");
+        }}
+      />
     </MainLayout>
   );
 };

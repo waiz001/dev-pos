@@ -56,8 +56,7 @@ const POSShop = () => {
   const navigate = useNavigate();
 
   const handleStartPOS = (storeId: string) => {
-    // In a real app, you might pass the store ID to the POS session
-    navigate("/pos-session");
+    navigate(`/pos-session?storeId=${storeId}`);
   };
 
   return (

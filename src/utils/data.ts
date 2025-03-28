@@ -1,664 +1,369 @@
-export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  description?: string;
-  barcode?: string;
-  inStock: number;
-}
+import { v4 as uuidv4 } from "uuid";
 
 export interface Category {
   id: string;
   name: string;
-  icon?: string;
 }
 
-export interface CartItem extends Product {
-  quantity: number;
+export interface PaymentMethod {
+  id: string;
+  name: string;
 }
 
 export interface Customer {
   id: string;
   name: string;
   email: string;
-  phone?: string;
-  address?: string;
-  registrationDate: Date;
-  totalOrders: number;
-  totalSpent: number;
+  phone: string;
+  address: string;
   notes?: string;
+}
+
+export interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+  quantity: number;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+  description?: string;
+  image: string;
+  barcode?: string;
+  inStock: number;
+  storeId?: string; // New field to associate product with a store
 }
 
 export interface Order {
   id: string;
-  items: CartItem[];
-  total: number;
-  tax: number;
-  status: 'pending' | 'completed' | 'cancelled' | 'in-progress';
-  date: Date;
   customerId?: string;
   customerName?: string;
+  items: CartItem[];
+  date: Date;
+  total: number;
+  tax?: number;
   paymentMethod: string;
   notes?: string;
+  status: "completed" | "pending" | "cancelled" | "in-progress";
+  storeId?: string; // New field to associate order with a store
 }
 
-export interface Report {
-  id: string;
-  name: string;
-  type: 'sales' | 'inventory' | 'customers' | 'custom';
-  description: string;
-  createdAt: Date;
-  lastRun?: Date;
-  format: 'pdf' | 'excel' | 'csv';
-  scheduled: boolean;
-  scheduledFrequency?: 'daily' | 'weekly' | 'monthly';
-}
-
-export interface Setting {
-  id: string;
-  name: string;
-  value: string;
-  category: 'general' | 'payment' | 'tax' | 'printer' | 'notification' | 'security';
-  description: string;
-}
-
-// Sample categories
 export const categories: Category[] = [
-  { id: 'all', name: 'All Products' },
-  { id: 'drinks', name: 'Drinks' },
-  { id: 'food', name: 'Food' },
-  { id: 'dessert', name: 'Desserts' },
-  { id: 'electronics', name: 'Electronics' },
-  { id: 'clothing', name: 'Clothing' }
+  {
+    id: "all",
+    name: "All",
+  },
+  {
+    id: "drinks",
+    name: "Drinks",
+  },
+  {
+    id: "food",
+    name: "Food",
+  },
+  {
+    id: "desserts",
+    name: "Desserts",
+  },
+  {
+    id: "electronics",
+    name: "Electronics",
+  },
+  {
+    id: "clothing",
+    name: "Clothing",
+  },
 ];
 
-// Default sample data
-const defaultProducts: Product[] = [
+export const paymentMethods: PaymentMethod[] = [
   {
-    id: 'product-1',
-    name: 'Espresso',
-    price: 2.50,
-    image: 'https://images.unsplash.com/photo-1612337857154-91c9a54d4e55?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'drinks',
-    barcode: '8901234567',
-    inStock: 100
+    id: "cash",
+    name: "Cash",
   },
   {
-    id: 'product-2',
-    name: 'Cappuccino',
-    price: 3.50,
-    image: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'drinks',
-    barcode: '8901234568',
-    inStock: 100
+    id: "credit-card",
+    name: "Credit Card",
+  },
+];
+
+export const stores = [
+  {
+    id: "store-1",
+    name: "Main Store",
+    address: "123 Main Street, Anytown",
+    phone: "+1 (555) 123-4567",
+    hours: "9:00 AM - 9:00 PM",
+    employees: 5,
+    image: "https://images.unsplash.com/photo-1582539511848-55707aee0625?auto=format&fit=crop&q=80&w=500&h=300"
   },
   {
-    id: 'product-3',
-    name: 'Chicken Sandwich',
-    price: 6.99,
-    image: 'https://images.unsplash.com/photo-1598182198871-d3f4ab4fd181?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'food',
-    barcode: '8901234569',
-    inStock: 30
+    id: "store-2",
+    name: "Downtown Branch",
+    address: "456 Commerce Ave, Downtown",
+    phone: "+1 (555) 987-6543",
+    hours: "8:00 AM - 8:00 PM",
+    employees: 3,
+    image: "https://images.unsplash.com/photo-1604719312566-8912e9c8a213?auto=format&fit=crop&q=80&w=500&h=300"
   },
   {
-    id: 'product-4',
-    name: 'Chocolate Cake',
-    price: 4.99,
-    image: 'https://images.unsplash.com/photo-1574085733277-851d9d856a3a?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'dessert',
-    barcode: '8901234570',
-    inStock: 20
+    id: "store-3",
+    name: "Shopping Mall Kiosk",
+    address: "789 Mall Plaza, Shop #42",
+    phone: "+1 (555) 456-7890",
+    hours: "10:00 AM - 10:00 PM",
+    employees: 2,
+    image: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&q=80&w=500&h=300"
+  }
+];
+
+// Mock data
+export let products: Product[] = [
+  {
+    id: "product-1",
+    name: "Latte",
+    price: 3.5,
+    category: "drinks",
+    image: "https://images.unsplash.com/photo-1517256054524-a7214ca2af9e?q=80&w=200&h=200&auto=format&fit=crop",
+    inStock: 50,
   },
   {
-    id: 'product-5',
-    name: 'Vegetable Salad',
-    price: 5.99,
-    image: 'https://images.unsplash.com/photo-1607532941433-304659e8198a?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'food',
-    barcode: '8901234571',
-    inStock: 25
-  },
-  {
-    id: 'product-6',
-    name: 'Fresh Orange Juice',
-    price: 3.99,
-    image: 'https://images.unsplash.com/photo-1613478223719-2ab802602423?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'drinks',
-    barcode: '8901234572',
-    inStock: 40
-  },
-  {
-    id: 'product-7',
-    name: 'Cheesecake',
-    price: 4.50,
-    image: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'dessert',
-    barcode: '8901234573',
-    inStock: 15
-  },
-  {
-    id: 'product-8',
-    name: 'Iced Coffee',
-    price: 3.75,
-    image: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'drinks',
-    barcode: '8901234574',
-    inStock: 60
-  },
-  {
-    id: 'product-9',
-    name: 'Wireless Earbuds',
-    price: 59.99,
-    image: 'https://images.unsplash.com/photo-1606058800874-5421730db9e3?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'electronics',
-    barcode: '8901234575',
-    inStock: 10
-  },
-  {
-    id: 'product-10',
-    name: 'T-Shirt',
-    price: 19.99,
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'clothing',
-    barcode: '8901234576',
-    inStock: 25
-  },
-  {
-    id: 'product-11',
-    name: 'Burger',
+    id: "product-2",
+    name: "Burger",
     price: 8.99,
-    image: 'https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'food',
-    barcode: '8901234577',
-    inStock: 20
+    category: "food",
+    image: "https://images.unsplash.com/photo-1568901342037-24c7e8a8c50f?q=80&w=200&h=200&auto=format&fit=crop",
+    inStock: 30,
   },
   {
-    id: 'product-12',
-    name: 'Smart Watch',
-    price: 129.99,
-    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=200&h=200&auto=format&fit=crop',
-    category: 'electronics',
-    barcode: '8901234578',
-    inStock: 8
-  }
+    id: "product-3",
+    name: "Ice Cream",
+    price: 4.25,
+    category: "desserts",
+    image: "https://images.unsplash.com/photo-1563720239742-9fa9c91e584c?q=80&w=200&h=200&auto=format&fit=crop",
+    inStock: 40,
+  },
+  {
+    id: "product-4",
+    name: "Headphones",
+    price: 79.00,
+    category: "electronics",
+    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&h=200&auto=format&fit=crop",
+    inStock: 20,
+  },
+  {
+    id: "product-5",
+    name: "T-Shirt",
+    price: 19.99,
+    category: "clothing",
+    image: "https://images.unsplash.com/photo-1523381294911-8cd694c82c4c?q=80&w=200&h=200&auto=format&fit=crop",
+    inStock: 60,
+  },
 ];
 
-const defaultCustomers: Customer[] = [
+export let customers: Customer[] = [
   {
-    id: 'customer-1',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '555-123-4567',
-    address: '123 Main St, Anytown, USA',
-    registrationDate: new Date('2023-01-15'),
-    totalOrders: 5,
-    totalSpent: 245.50,
-    notes: 'Regular customer, prefers contactless delivery'
+    id: "customer-1",
+    name: "John Doe",
+    email: "john.doe@example.com",
+    phone: "555-1234",
+    address: "123 Main St",
   },
   {
-    id: 'customer-2',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    phone: '555-987-6543',
-    address: '456 Oak Ave, Somewhere, USA',
-    registrationDate: new Date('2023-02-20'),
-    totalOrders: 3,
-    totalSpent: 178.25,
-    notes: ''
+    id: "customer-2",
+    name: "Jane Smith",
+    email: "jane.smith@example.com",
+    phone: "555-5678",
+    address: "456 Elm St",
   },
-  {
-    id: 'customer-3',
-    name: 'Robert Johnson',
-    email: 'robert.j@example.com',
-    phone: '555-567-8901',
-    address: '789 Pine Rd, Elsewhere, USA',
-    registrationDate: new Date('2023-03-10'),
-    totalOrders: 8,
-    totalSpent: 412.75,
-    notes: 'VIP customer, always tips well'
-  },
-  {
-    id: 'customer-4',
-    name: 'Emily Davis',
-    email: 'emily.d@example.com',
-    phone: '555-234-5678',
-    registrationDate: new Date('2023-04-05'),
-    totalOrders: 2,
-    totalSpent: 97.30,
-    notes: 'New customer'
-  },
-  {
-    id: 'customer-5',
-    name: 'Michael Wilson',
-    email: 'michael.w@example.com',
-    phone: '555-345-6789',
-    address: '321 Cedar St, Nowhere, USA',
-    registrationDate: new Date('2023-05-18'),
-    totalOrders: 6,
-    totalSpent: 325.40,
-    notes: 'Prefers pickup over delivery'
-  }
 ];
 
-// Default sample orders
-const defaultOrders: Order[] = [
+export let orders: Order[] = [
   {
-    id: 'order-1',
+    id: "order-1",
+    customerId: "customer-1",
+    customerName: "John Doe",
     items: [
-      { ...defaultProducts[0], quantity: 2 },
-      { ...defaultProducts[2], quantity: 1 }
+      {
+        id: "product-1",
+        name: "Latte",
+        price: 3.5,
+        image: "https://images.unsplash.com/photo-1517256054524-a7214ca2af9e?q=80&w=200&h=200&auto=format&fit=crop",
+        quantity: 2,
+      },
+      {
+        id: "product-2",
+        name: "Burger",
+        price: 8.99,
+        image: "https://images.unsplash.com/photo-1568901342037-24c7e8a8c50f?q=80&w=200&h=200&auto=format&fit=crop",
+        quantity: 1,
+      },
     ],
-    total: 11.99,
-    tax: 1.20,
-    status: 'completed',
-    date: new Date('2023-05-18T14:30:00'),
-    customerId: 'customer-1',
-    customerName: 'John Doe',
-    paymentMethod: 'credit-card',
-    notes: ''
+    date: new Date(),
+    total: 16.99,
+    paymentMethod: "cash",
+    status: "completed",
   },
   {
-    id: 'order-2',
+    id: "order-2",
+    customerId: "customer-2",
+    customerName: "Jane Smith",
     items: [
-      { ...defaultProducts[1], quantity: 1 },
-      { ...defaultProducts[3], quantity: 2 }
+      {
+        id: "product-3",
+        name: "Ice Cream",
+        price: 4.25,
+        image: "https://images.unsplash.com/photo-1563720239742-9fa9c91e584c?q=80&w=200&h=200&auto=format&fit=crop",
+        quantity: 3,
+      },
     ],
-    total: 13.47,
-    tax: 1.35,
-    status: 'pending',
-    date: new Date('2023-05-19T10:15:00'),
-    customerId: 'customer-2',
-    customerName: 'Jane Smith',
-    paymentMethod: 'cash',
-    notes: 'Extra napkins requested'
+    date: new Date(),
+    total: 12.75,
+    paymentMethod: "credit-card",
+    status: "pending",
   },
-  {
-    id: 'order-3',
-    items: [
-      { ...defaultProducts[4], quantity: 1 }
-    ],
-    total: 5.99,
-    tax: 0.60,
-    status: 'completed',
-    date: new Date('2023-05-19T16:45:00'),
-    customerId: 'customer-3',
-    customerName: 'Robert Johnson',
-    paymentMethod: 'mobile-payment',
-    notes: ''
-  },
-  {
-    id: 'order-4',
-    items: [
-      { ...defaultProducts[2], quantity: 2 },
-      { ...defaultProducts[5], quantity: 1 }
-    ],
-    total: 17.97,
-    tax: 1.80,
-    status: 'cancelled',
-    date: new Date('2023-05-20T12:00:00'),
-    customerId: 'customer-1',
-    customerName: 'John Doe',
-    paymentMethod: 'credit-card',
-    notes: 'Customer changed mind'
-  },
-  {
-    id: 'order-5',
-    items: [
-      { ...defaultProducts[6], quantity: 1 },
-      { ...defaultProducts[7], quantity: 2 }
-    ],
-    total: 12.00,
-    tax: 1.20,
-    status: 'completed',
-    date: new Date('2023-05-21T09:30:00'),
-    customerName: 'Guest',
-    paymentMethod: 'cash',
-    notes: ''
-  }
 ];
 
-// Default sample reports
-const defaultReports: Report[] = [
-  {
-    id: 'report-1',
-    name: 'Monthly Sales Report',
-    type: 'sales',
-    description: 'Summary of all sales for the current month',
-    createdAt: new Date('2023-04-01'),
-    lastRun: new Date('2023-05-01'),
-    format: 'pdf',
-    scheduled: true,
-    scheduledFrequency: 'monthly'
-  },
-  {
-    id: 'report-2',
-    name: 'Inventory Status',
-    type: 'inventory',
-    description: 'Current inventory levels and restocking needs',
-    createdAt: new Date('2023-04-15'),
-    lastRun: new Date('2023-05-15'),
-    format: 'excel',
-    scheduled: false
-  },
-  {
-    id: 'report-3',
-    name: 'Top Customers',
-    type: 'customers',
-    description: 'List of top customers by sales volume',
-    createdAt: new Date('2023-04-10'),
-    lastRun: new Date('2023-05-10'),
-    format: 'pdf',
-    scheduled: true,
-    scheduledFrequency: 'monthly'
-  },
-  {
-    id: 'report-4',
-    name: 'Daily Transactions',
-    type: 'sales',
-    description: 'Detailed list of all transactions for each day',
-    createdAt: new Date('2023-05-01'),
-    lastRun: new Date('2023-05-22'),
-    format: 'csv',
-    scheduled: true,
-    scheduledFrequency: 'daily'
-  }
-];
-
-// Default sample settings
-const defaultSettings: Setting[] = [
-  {
-    id: 'setting-1',
-    name: 'Store Name',
-    value: 'My POS Store',
-    category: 'general',
-    description: 'Name of your store'
-  },
-  {
-    id: 'setting-2',
-    name: 'Tax Rate',
-    value: '10',
-    category: 'tax',
-    description: 'Default tax rate percentage'
-  },
-  {
-    id: 'setting-3',
-    name: 'Receipt Footer Text',
-    value: 'Thank you for your purchase!',
-    category: 'printer',
-    description: 'Text to display at the bottom of receipts'
-  },
-  {
-    id: 'setting-4',
-    name: 'Order Notification',
-    value: 'true',
-    category: 'notification',
-    description: 'Send email notifications for new orders'
-  },
-  {
-    id: 'setting-5',
-    name: 'Session Timeout',
-    value: '30',
-    category: 'security',
-    description: 'User session timeout in minutes'
-  }
-];
-
-// Helper functions to load and save data
-const loadData = <T>(key: string, defaultValue: T[]): T[] => {
-  try {
-    const storedData = localStorage.getItem(key);
-    if (storedData) {
-      const parsed = JSON.parse(storedData);
-      // Handle Date objects that were serialized to strings
-      if (key === 'customers') {
-        return parsed.map((item: any) => ({
-          ...item,
-          registrationDate: new Date(item.registrationDate)
-        }));
-      } else if (key === 'orders') {
-        return parsed.map((item: any) => ({
-          ...item,
-          date: new Date(item.date)
-        }));
-      } else if (key === 'reports') {
-        return parsed.map((item: any) => ({
-          ...item,
-          createdAt: new Date(item.createdAt),
-          lastRun: item.lastRun ? new Date(item.lastRun) : undefined
-        }));
-      }
-      return parsed;
-    }
-    return defaultValue;
-  } catch (error) {
-    console.error(`Error loading ${key}:`, error);
-    return defaultValue;
-  }
-};
-
-const saveData = <T>(key: string, data: T[]): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify(data));
-  } catch (error) {
-    console.error(`Error saving ${key}:`, error);
-  }
-};
-
-// Load data from localStorage or use defaults
-export let products: Product[] = loadData('products', defaultProducts);
-export let customers: Customer[] = loadData('customers', defaultCustomers);
-export let orders: Order[] = loadData('orders', defaultOrders);
-export let reports: Report[] = loadData('reports', defaultReports);
-export let settings: Setting[] = loadData('settings', defaultSettings);
-
-// Payment methods
-export const paymentMethods = [
-  { id: 'cash', name: 'Cash' },
-  { id: 'credit-card', name: 'Credit Card' },
-  { id: 'debit-card', name: 'Debit Card' },
-  { id: 'mobile-payment', name: 'Mobile Payment' }
-];
-
-// Product CRUD operations
-export const addProduct = (product: Omit<Product, 'id'>): Product => {
-  const newProduct = {
-    ...product,
-    id: `product-${Date.now()}`,
+// CRUD operations for Products
+export const addProduct = (productData: Partial<Product>): Product => {
+  const newProduct: Product = {
+    id: uuidv4(),
+    name: productData.name || "New Product",
+    price: productData.price || 10,
+    category: productData.category || "food",
+    description: productData.description || "",
+    image: productData.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&h=200&auto=format&fit=crop",
+    barcode: productData.barcode || "",
+    inStock: productData.inStock || 100,
+    storeId: productData.storeId || "",
   };
-  
-  products = [...products, newProduct];
-  saveData('products', products);
+  products.push(newProduct);
   return newProduct;
 };
 
-export const updateProduct = (id: string, updates: Partial<Product>): Product | null => {
-  const index = products.findIndex(p => p.id === id);
-  
-  if (index === -1) return null;
-  
-  const updatedProduct = { ...products[index], ...updates };
-  products = [
-    ...products.slice(0, index),
-    updatedProduct,
-    ...products.slice(index + 1)
-  ];
-  
-  saveData('products', products);
-  return updatedProduct;
+export const getProduct = (id: string): Product | undefined => {
+  return products.find((product) => product.id === id);
+};
+
+export const updateProduct = (id: string, productData: Partial<Product>): Product | null => {
+  const productIndex = products.findIndex((product) => product.id === id);
+  if (productIndex === -1) {
+    return null;
+  }
+
+  products[productIndex] = {
+    ...products[productIndex],
+    ...productData,
+  };
+
+  return products[productIndex];
 };
 
 export const deleteProduct = (id: string): boolean => {
-  const initialLength = products.length;
-  products = products.filter(p => p.id !== id);
-  const success = products.length < initialLength;
-  
-  if (success) {
-    saveData('products', products);
+  const productIndex = products.findIndex((product) => product.id === id);
+  if (productIndex === -1) {
+    return false;
   }
-  
-  return success;
+
+  products.splice(productIndex, 1);
+  return true;
 };
 
-export const getProductById = (id: string): Product | undefined => {
-  return products.find(p => p.id === id);
-};
-
-// Customer CRUD operations
-export const addCustomer = (customer: Omit<Customer, 'id'>): Customer => {
-  const newCustomer = {
-    ...customer,
-    id: `customer-${Date.now()}`,
+// CRUD operations for Customers
+export const addCustomer = (customerData: Omit<Customer, "id">): Customer => {
+  const newCustomer: Customer = {
+    id: uuidv4(),
+    ...customerData,
   };
-  
-  customers = [...customers, newCustomer];
-  saveData('customers', customers);
+  customers.push(newCustomer);
   return newCustomer;
 };
 
-export const updateCustomer = (id: string, updates: Partial<Customer>): Customer | null => {
-  const index = customers.findIndex(c => c.id === id);
-  
-  if (index === -1) return null;
-  
-  const updatedCustomer = { ...customers[index], ...updates };
-  customers = [
-    ...customers.slice(0, index),
-    updatedCustomer,
-    ...customers.slice(index + 1)
-  ];
-  
-  saveData('customers', customers);
-  return updatedCustomer;
+export const getCustomer = (id: string): Customer | undefined => {
+  return customers.find((customer) => customer.id === id);
+};
+
+export const updateCustomer = (id: string, customerData: Partial<Customer>): Customer | null => {
+  const customerIndex = customers.findIndex((customer) => customer.id === id);
+  if (customerIndex === -1) {
+    return null;
+  }
+
+  customers[customerIndex] = {
+    ...customers[customerIndex],
+    ...customerData,
+  };
+
+  return customers[customerIndex];
 };
 
 export const deleteCustomer = (id: string): boolean => {
-  const initialLength = customers.length;
-  customers = customers.filter(c => c.id !== id);
-  const success = customers.length < initialLength;
-  
-  if (success) {
-    saveData('customers', customers);
+  const customerIndex = customers.findIndex((customer) => customer.id === id);
+  if (customerIndex === -1) {
+    return false;
   }
-  
-  return success;
+
+  customers.splice(customerIndex, 1);
+  return true;
 };
 
-export const getCustomerById = (id: string): Customer | undefined => {
-  return customers.find(c => c.id === id);
-};
-
-// Order CRUD operations
-export const addOrder = (order: Omit<Order, 'id'>): Order => {
-  const newOrder = {
-    ...order,
-    id: `order-${Date.now()}`,
+// CRUD operations for Orders
+export const addOrder = (orderData: Omit<Order, "id">): Order => {
+  const newOrder: Order = {
+    id: uuidv4(),
+    ...orderData,
   };
-  
-  orders = [...orders, newOrder];
-  saveData('orders', orders);
+  orders.push(newOrder);
   return newOrder;
 };
 
-export const updateOrder = (id: string, updates: Partial<Order>): Order | null => {
-  const index = orders.findIndex(o => o.id === id);
-  
-  if (index === -1) return null;
-  
-  const updatedOrder = { ...orders[index], ...updates };
-  orders = [
-    ...orders.slice(0, index),
-    updatedOrder,
-    ...orders.slice(index + 1)
-  ];
-  
-  saveData('orders', orders);
-  return updatedOrder;
+export const getOrder = (id: string): Order | undefined => {
+  return orders.find((order) => order.id === id);
+};
+
+export const updateOrder = (id: string, orderData: Partial<Order>): Order | null => {
+  const orderIndex = orders.findIndex((order) => order.id === id);
+  if (orderIndex === -1) {
+    return null;
+  }
+
+  orders[orderIndex] = {
+    ...orders[orderIndex],
+    ...orderData,
+  };
+
+  return orders[orderIndex];
 };
 
 export const deleteOrder = (id: string): boolean => {
-  const initialLength = orders.length;
-  orders = orders.filter(o => o.id !== id);
-  const success = orders.length < initialLength;
-  
-  if (success) {
-    saveData('orders', orders);
+  const orderIndex = orders.findIndex((order) => order.id === id);
+  if (orderIndex === -1) {
+    return false;
   }
-  
-  return success;
+
+  orders.splice(orderIndex, 1);
+  return true;
 };
 
-export const getOrderById = (id: string): Order | undefined => {
-  return orders.find(o => o.id === id);
-};
-
-// Report CRUD operations
-export const addReport = (report: Omit<Report, 'id'>): Report => {
-  const newReport = {
-    ...report,
-    id: `report-${Date.now()}`,
+// Update template functions for import/export
+export const generateProductTemplate = () => {
+  return {
+    headers: ["name", "price", "category", "description", "barcode", "inStock", "storeId", "image"],
+    data: [
+      ["Sample Product", "9.99", "electronics", "Sample description", "12345678", "100", "store-1", "https://example.com/image.jpg"]
+    ]
   };
-  
-  reports = [...reports, newReport];
-  saveData('reports', reports);
-  return newReport;
 };
 
-export const updateReport = (id: string, updates: Partial<Report>): Report | null => {
-  const index = reports.findIndex(r => r.id === id);
-  
-  if (index === -1) return null;
-  
-  const updatedReport = { ...reports[index], ...updates };
-  reports = [
-    ...reports.slice(0, index),
-    updatedReport,
-    ...reports.slice(index + 1)
-  ];
-  
-  saveData('reports', reports);
-  return updatedReport;
-};
-
-export const deleteReport = (id: string): boolean => {
-  const initialLength = reports.length;
-  reports = reports.filter(r => r.id !== id);
-  const success = reports.length < initialLength;
-  
-  if (success) {
-    saveData('reports', reports);
-  }
-  
-  return success;
-};
-
-export const getReportById = (id: string): Report | undefined => {
-  return reports.find(r => r.id === id);
-};
-
-// Setting CRUD operations
-export const updateSetting = (id: string, value: string): Setting | null => {
-  const index = settings.findIndex(s => s.id === id);
-  
-  if (index === -1) return null;
-  
-  const updatedSetting = { ...settings[index], value };
-  settings = [
-    ...settings.slice(0, index),
-    updatedSetting,
-    ...settings.slice(index + 1)
-  ];
-  
-  saveData('settings', settings);
-  return updatedSetting;
-};
-
-export const getSettingByName = (name: string): Setting | undefined => {
-  return settings.find(s => s.name === name);
-};
-
-export const getSettingsByCategory = (category: Setting['category']): Setting[] => {
-  return settings.filter(s => s.category === category);
+export const generateCustomerTemplate = () => {
+  return {
+    headers: ["name", "email", "phone", "address", "notes"],
+    data: [
+      ["John Doe", "john@example.com", "555-123-4567", "123 Main St, Anytown", "VIP customer"]
+    ]
+  };
 };

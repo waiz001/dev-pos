@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order } from "@/utils/data";
+import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores } from "@/utils/data";
 import { toast } from "sonner";
 import { FileDown, FileUp, Printer, RotateCcw, ListOrdered } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
@@ -33,6 +32,7 @@ import PDFViewer from "@/components/reports/PDFViewer";
 
 const POSSession = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [cart, setCart] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomerId, setSelectedCustomerId] = useState("guest");
@@ -44,11 +44,22 @@ const POSSession = () => {
   const [isAllOrdersDialogOpen, setIsAllOrdersDialogOpen] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const storeId = params.get('storeId');
+    if (storeId) {
+      setCurrentStoreId(storeId);
+    }
+  }, [location]);
   
   const filteredProducts = Array.isArray(products) 
-    ? products.filter(product => 
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+    ? products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStore = !currentStoreId || !product.storeId || product.storeId === currentStoreId;
+        return matchesSearch && matchesStore;
+      })
     : [];
 
   const addToCart = (product: any) => {
@@ -123,6 +134,7 @@ const POSSession = () => {
       customerId: selectedCustomer?.id || "",
       customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: selectedPaymentMethod,
+      storeId: currentStoreId || ""
     };
     
     try {
@@ -135,22 +147,31 @@ const POSSession = () => {
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
           
-          const customerReceipt = generateOrderReceiptPDF(updatedOrder);
-          setPdfDocument(customerReceipt);
-          customerReceipt.save("customer_receipt.pdf");
-          
-          const merchantReceipt = generateOrderReceiptPDF({
-            ...updatedOrder,
-            isMerchantCopy: true
-          });
-          merchantReceipt.save("merchant_receipt.pdf");
-          
-          // Reset cart and start a new order after successful completion
-          resetCart();
-          
-          toast.success("Order completed and receipts downloaded", {
-            position: "bottom-center"
-          });
+          try {
+            const customerReceipt = generateOrderReceiptPDF(updatedOrder);
+            setPdfDocument(customerReceipt);
+            customerReceipt.save("customer_receipt.pdf");
+            
+            const merchantReceipt = generateOrderReceiptPDF({
+              ...updatedOrder,
+              isMerchantCopy: true
+            });
+            merchantReceipt.save("merchant_receipt.pdf");
+            
+            setIsPrintDialogOpen(true);
+            
+            resetCart();
+            
+            toast.success("Order completed and receipts downloaded", {
+              position: "bottom-center"
+            });
+          } catch (error) {
+            console.error("Error generating receipts:", error);
+            toast.error("Failed to generate receipts, but order was saved", {
+              position: "bottom-center"
+            });
+            resetCart();
+          }
         } else {
           toast.error("Failed to update order", {
             position: "bottom-center"
@@ -160,22 +181,31 @@ const POSSession = () => {
         const order = addOrder(orderData);
         setLastOrderId(order.id);
         
-        const customerReceipt = generateOrderReceiptPDF(order);
-        setPdfDocument(customerReceipt);
-        customerReceipt.save("customer_receipt.pdf");
-        
-        const merchantReceipt = generateOrderReceiptPDF({
-          ...order,
-          isMerchantCopy: true
-        });
-        merchantReceipt.save("merchant_receipt.pdf");
-        
-        // Reset cart and start a new order after successful completion
-        resetCart();
-        
-        toast.success("Order completed and receipts downloaded", {
-          position: "bottom-center"
-        });
+        try {
+          const customerReceipt = generateOrderReceiptPDF(order);
+          setPdfDocument(customerReceipt);
+          customerReceipt.save("customer_receipt.pdf");
+          
+          const merchantReceipt = generateOrderReceiptPDF({
+            ...order,
+            isMerchantCopy: true
+          });
+          merchantReceipt.save("merchant_receipt.pdf");
+          
+          setIsPrintDialogOpen(true);
+          
+          resetCart();
+          
+          toast.success("Order completed and receipts downloaded", {
+            position: "bottom-center"
+          });
+        } catch (error) {
+          console.error("Error generating receipts:", error);
+          toast.error("Failed to generate receipts, but order was saved", {
+            position: "bottom-center"
+          });
+          resetCart();
+        }
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -291,6 +321,7 @@ const POSSession = () => {
       customerName: selectedCustomer?.name || "Walk-in Customer",
       paymentMethod: selectedPaymentMethod,
       status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
+      storeId: currentStoreId || ""
     };
     
     try {
@@ -330,8 +361,9 @@ const POSSession = () => {
     
     try {
       const reportPdf = generateDailySalesReportPDF(todaysOrders);
-      
+      setPdfDocument(reportPdf);
       reportPdf.save("daily_sales_report.pdf");
+      setIsReportDialogOpen(true);
       
       toast.success("Sales report downloaded successfully");
     } catch (error) {
@@ -359,11 +391,18 @@ const POSSession = () => {
     }
   }, [orders]);
 
+  const currentStoreName = currentStoreId 
+    ? stores.find(store => store.id === currentStoreId)?.name || "Unknown Store"
+    : "All Stores";
+
   return (
     <MainLayout>
       <div className="p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">POS Session</h1>
+          <div>
+            <h1 className="text-3xl font-bold">POS Session</h1>
+            <p className="text-muted-foreground">Store: {currentStoreName}</p>
+          </div>
           <div className="flex items-center gap-4">
             <Badge variant="outline" className="text-lg">
               Today's Sales: ${totalSales.toFixed(2)}
@@ -383,7 +422,6 @@ const POSSession = () => {
               <Button variant="outline" onClick={() => { 
                 if (lastOrderId) {
                   generateReceipt();
-                  setIsPrintDialogOpen(true);
                 } else {
                   toast.error("No recent order to print");
                 }

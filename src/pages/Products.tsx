@@ -15,10 +15,12 @@ import {
   categories
 } from "@/utils/data";
 import { toast } from "sonner";
-import { PlusCircle, Pencil, Trash2, FileDown, FileUp } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, FileDown, FileUp, Download } from "lucide-react";
 import ProductForm from "@/components/forms/ProductForm";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 import AddProductButton from "@/components/forms/AddProductButton";
+import { generateProductsTemplate } from "@/utils/pdfUtils";
+import * as XLSX from 'xlsx';
 
 const ProductFormWrapper = ({ initialData, onSuccess }) => {
   const onSubmit = (formData) => {
@@ -106,6 +108,21 @@ const Products = () => {
     return category ? category.name : 'N/A';
   };
 
+  // Download template function
+  const downloadProductTemplate = () => {
+    try {
+      const template = generateProductsTemplate();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([template.headers, ...template.data]);
+      XLSX.utils.book_append_sheet(wb, ws, "Products");
+      XLSX.writeFile(wb, "product_import_template.xlsx");
+      toast.success("Template downloaded successfully");
+    } catch (error) {
+      console.error("Error generating template:", error);
+      toast.error("Failed to download template");
+    }
+  };
+
   return (
     <MainLayout>
       <div className="container mx-auto py-10">
@@ -119,6 +136,10 @@ const Products = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md"
             />
+            <Button variant="outline" onClick={downloadProductTemplate}>
+              <Download className="mr-2 h-4 w-4" />
+              Template
+            </Button>
             <Button onClick={() => setIsImportDialogOpen(true)}>
               <FileUp className="mr-2 h-4 w-4" />
               Import Excel
@@ -138,6 +159,7 @@ const Products = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Store</TableHead>
                   <TableHead>In Stock</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -148,6 +170,11 @@ const Products = () => {
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{getCategoryName(product.category)}</TableCell>
                     <TableCell>${product.price.toFixed(2)}</TableCell>
+                    <TableCell>
+                      {product.storeId ? 
+                        stores.find(s => s.id === product.storeId)?.name || 'Unknown Store' : 
+                        'All Stores'}
+                    </TableCell>
                     <TableCell>{product.inStock}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>

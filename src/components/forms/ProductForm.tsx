@@ -3,7 +3,7 @@ import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { categories, Product } from "@/utils/data";
+import { categories, Product, stores } from "@/utils/data";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -42,6 +42,7 @@ const productSchema = z.object({
     message: "Please enter a valid URL for the image.",
   }),
   description: z.string().optional(),
+  storeId: z.string().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -67,6 +68,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       barcode: initialData.barcode || "",
       image: initialData.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&h=200&auto=format&fit=crop",
       description: initialData.description || "",
+      storeId: initialData.storeId || "",
     },
   });
 
@@ -164,6 +166,32 @@ const ProductForm: React.FC<ProductFormProps> = ({
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="storeId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>POS Store (Optional)</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Available in all stores" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="">All Stores</SelectItem>
+                  {stores.map((store) => (
+                    <SelectItem key={store.id} value={store.id}>
+                      {store.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
