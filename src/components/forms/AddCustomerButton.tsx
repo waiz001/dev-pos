@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import CustomerForm from "./CustomerForm";
 import { addCustomer } from "@/utils/data";
@@ -28,7 +29,7 @@ const AddCustomerButton = () => {
       setIsOpen(false);
       toast.success(`Customer "${data.name}" added successfully`);
       
-      // Force a rerender by dispatching a custom event without refreshing the page
+      // Dispatch the custom event to notify other components about the customer update
       window.dispatchEvent(new CustomEvent('customer-updated'));
     } catch (error) {
       toast.error("Failed to add customer");
@@ -47,6 +48,9 @@ const AddCustomerButton = () => {
         <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Add New Customer</DialogTitle>
+            <DialogDescription>
+              Enter the customer details below.
+            </DialogDescription>
           </DialogHeader>
           <CustomerForm onSubmit={handleAddCustomer} buttonText="Add Customer" />
         </DialogContent>

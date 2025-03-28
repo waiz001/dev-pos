@@ -55,7 +55,9 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
 
   const handleSubmit = (values: CustomerFormValues) => {
     onSubmit(values);
-    toast.success(`Customer ${initialData.id ? "updated" : "created"} successfully`);
+    // Fix the toast message to avoid referencing initialData.name when it might be null
+    const actionText = initialData.id ? "updated" : "created";
+    toast.success(`Customer ${actionText} successfully`);
   };
 
   return (

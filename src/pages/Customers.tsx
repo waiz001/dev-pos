@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, Wallet } from "lucide-react";
 import CustomerForm from "@/components/forms/CustomerForm";
 import CustomerBalance from "@/components/customers/CustomerBalance";
+import AddCustomerButton from "@/components/forms/AddCustomerButton";
 
 // Create wrapper components to handle the props mismatch
 const CustomerFormWrapper = ({ initialData, onSuccess }: { initialData: any, onSuccess: () => void }) => {
@@ -53,9 +54,12 @@ const CustomerFormWrapper = ({ initialData, onSuccess }: { initialData: any, onS
     if (onSuccess) {
       onSuccess();
     }
+    
+    // Dispatch event to update the customer list
+    window.dispatchEvent(new CustomEvent('customer-updated'));
   };
 
-  return <CustomerForm initialData={initialData} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Customer" : "Add Customer"} />;
+  return <CustomerForm initialData={initialData || {}} onSubmit={handleSubmit} buttonText={initialData?.id ? "Update Customer" : "Add Customer"} />;
 };
 
 const CustomerBalanceWrapper = ({ customer, onSuccess }: { customer: any, onSuccess: () => void }) => {
@@ -70,18 +74,19 @@ const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
 
-  useEffect(() => {
-    setCustomers(allCustomers);
-  }, []);
-
-  // Refresh customers when a new customer is added or updated
+  // This effect will run once on component mount and set up the event listener
   useEffect(() => {
     const handleCustomerUpdate = () => {
-      setCustomers(allCustomers);
+      setCustomers([...allCustomers]);
     };
-
+    
+    // Add event listener
     window.addEventListener('customer-updated', handleCustomerUpdate);
     
+    // Initial load
+    setCustomers([...allCustomers]);
+    
+    // Cleanup
     return () => {
       window.removeEventListener('customer-updated', handleCustomerUpdate);
     };
@@ -106,7 +111,7 @@ const Customers = () => {
     if (confirmDelete) {
       const success = deleteCustomerData(id);
       if (success) {
-        setCustomers(allCustomers);
+        setCustomers([...allCustomers]);
         toast.success("Customer deleted successfully");
       } else {
         toast.error("Failed to delete customer");
@@ -132,10 +137,7 @@ const Customers = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-sm"
             />
-            <Button onClick={handleAddCustomer}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Customer
-            </Button>
+            <AddCustomerButton />
             <Button onClick={() => navigate("/")}>Back to Dashboard</Button>
           </div>
         </div>
@@ -226,7 +228,9 @@ const Customers = () => {
               View and manage customer balance.
             </DialogDescription>
           </DialogHeader>
-          <CustomerBalanceWrapper customer={selectedCustomer} onSuccess={() => setIsBalanceDialogOpen(false)} />
+          {selectedCustomer && (
+            <CustomerBalanceWrapper customer={selectedCustomer} onSuccess={() => setIsBalanceDialogOpen(false)} />
+          )}
         </DialogContent>
       </Dialog>
     </MainLayout>
