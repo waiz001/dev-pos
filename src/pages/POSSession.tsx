@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order } from "@/utils/data";
 import { toast } from "sonner";
-import { FileDown, FileUp, Printer, RotateCcw, ListOrdered, PlusCircle } from "lucide-react";
+import { FileDown, FileUp, Printer, RotateCcw, ListOrdered } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
 import RecoveryForm from "@/components/pos/RecoveryForm";
@@ -44,7 +44,6 @@ const POSSession = () => {
   const [isAllOrdersDialogOpen, setIsAllOrdersDialogOpen] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
-  const [isNewOrderDialogOpen, setIsNewOrderDialogOpen] = useState(false);
   
   const filteredProducts = Array.isArray(products) 
     ? products.filter(product => 
@@ -94,6 +93,13 @@ const POSSession = () => {
 
   const calculateTax = () => {
     return calculateTotal() * 0.1;
+  };
+
+  const resetCart = () => {
+    setCart([]);
+    setCurrentOrderId(null);
+    setSelectedCustomerId("guest");
+    setSelectedPaymentMethod("cash");
   };
 
   const handleCheckout = () => {
@@ -214,28 +220,6 @@ const POSSession = () => {
       });
       return false;
     }
-  };
-
-  const handleNewOrder = () => {
-    if (cart.length > 0) {
-      setIsNewOrderDialogOpen(true);
-    } else {
-      resetCart();
-    }
-  };
-
-  const confirmNewOrder = () => {
-    if (saveOrderInProgress()) {
-      resetCart();
-      setIsNewOrderDialogOpen(false);
-    }
-  };
-
-  const resetCart = () => {
-    setCart([]);
-    setCurrentOrderId(null);
-    setSelectedCustomerId("guest");
-    setSelectedPaymentMethod("cash");
   };
 
   const loadOrder = (order: Order) => {
@@ -414,7 +398,7 @@ const POSSession = () => {
               </Button>
             </div>
             
-            <Button onClick={() => navigate("/")}>Close Session</Button>
+            <Button onClick={() => navigate("/pos-shop")}>Back to Shops</Button>
           </div>
         </div>
 
@@ -446,12 +430,8 @@ const POSSession = () => {
             <Card className="h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium">
-                  {currentOrderId ? `Editing Order: ${currentOrderId}` : "New Order"}
+                  {currentOrderId ? `Editing Order: ${currentOrderId}` : "Current Order"}
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={handleNewOrder}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  New Order
-                </Button>
               </CardHeader>
               <CardContent className="flex h-[calc(100%-84px)] flex-col">
                 <div className="mb-4 space-y-4">
@@ -602,28 +582,6 @@ const POSSession = () => {
         onOpenChange={setIsAllOrdersDialogOpen}
         onSelectOrder={loadOrder}
       />
-      
-      <Dialog open={isNewOrderDialogOpen} onOpenChange={setIsNewOrderDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Start New Order</DialogTitle>
-            <DialogDescription>
-              You have items in your current order. What would you like to do with them?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Your current order will be saved as "In Progress" and can be resumed later.</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNewOrderDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmNewOrder}>
-              Save and Start New Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 };

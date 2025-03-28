@@ -1,6 +1,6 @@
 
 import React, { ReactNode } from "react";
-import { BellRing, Menu, Search, User, LogOut, UserPlus, Settings, Users } from "lucide-react";
+import { BellRing, Menu, Search, User, LogOut, UserPlus, Settings, Users, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -68,6 +68,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               >
                 <span>Dashboard</span>
               </Link>
+              
+              {currentUser?.permissions.orders && (
+                <Link
+                  to="/pos-shop"
+                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                    isActiveRoute("/pos-shop") 
+                      ? "bg-accent text-accent-foreground" 
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  <span>POS Shop</span>
+                </Link>
+              )}
               
               {currentUser?.permissions.products && (
                 <Link
@@ -210,6 +223,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     <DropdownMenuItem onClick={() => navigate('/settings')}>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {currentUser?.permissions.orders && (
+                    <DropdownMenuItem onClick={() => navigate('/pos-shop')}>
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <span>POS Shop</span>
                     </DropdownMenuItem>
                   )}
                   

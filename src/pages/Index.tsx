@@ -30,8 +30,6 @@ import {
   customers,
   Order
 } from "@/utils/data";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
 
 const salesData = [
   { name: 'Jan', total: 1500 },
@@ -78,16 +76,8 @@ const Index = () => {
   return (
     <MainLayout>
       <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button 
-            size="lg" 
-            onClick={() => navigate("/pos-session")}
-            className="gap-2"
-          >
-            <ShoppingCart className="h-5 w-5" />
-            Start POS
-          </Button>
         </div>
         
         {/* Summary Cards */}

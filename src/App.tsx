@@ -19,6 +19,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Users from "./pages/Users";
 import POSSession from "./pages/POSSession";
+import POSShop from "./pages/POSShop";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 
@@ -55,7 +56,8 @@ const ProtectedRoute = ({ children }) => {
       'reports': 'reports',
       'settings': 'settings',
       'users': 'users',
-      'pos-session': 'orders' // POS session needs orders permission
+      'pos-session': 'orders', // POS session needs orders permission
+      'pos-shop': 'orders'     // POS shop also needs orders permission
     };
     
     const requiredPermission = permissionMap[routeName];
@@ -145,6 +147,15 @@ const AppWithAuth = () => {
           element={
             <ProtectedRoute>
               <POSSession />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/pos-shop" 
+          element={
+            <ProtectedRoute>
+              <POSShop />
             </ProtectedRoute>
           } 
         />
