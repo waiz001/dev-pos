@@ -13,7 +13,7 @@ import {
   addProduct as addProductData,
   updateProduct as updateProductData,
   categories,
-  stores
+  getStores
 } from "@/utils/data";
 import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, FileDown, FileUp, Download } from "lucide-react";
@@ -56,6 +56,7 @@ const Products = () => {
   const [open, setOpen] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [stores, setStores] = useState([]);
 
   // This effect will run once on component mount and set up the event listener
   useEffect(() => {
@@ -68,6 +69,7 @@ const Products = () => {
     
     // Initial load
     setProducts([...allProducts]);
+    setStores(getStores());
     
     // Cleanup
     return () => {
@@ -107,6 +109,12 @@ const Products = () => {
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'N/A';
+  };
+
+  // Store name lookup function
+  const getStoreName = (storeId: string) => {
+    const store = stores.find(s => s.id === storeId);
+    return store ? store.name : 'All Stores';
   };
 
   // Download template function
@@ -173,7 +181,7 @@ const Products = () => {
                     <TableCell>${product.price.toFixed(2)}</TableCell>
                     <TableCell>
                       {product.storeId ? 
-                        stores.find(s => s.id === product.storeId)?.name || 'Unknown Store' : 
+                        getStoreName(product.storeId) : 
                         'All Stores'}
                     </TableCell>
                     <TableCell>{product.inStock}</TableCell>

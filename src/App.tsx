@@ -72,110 +72,110 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Router with AuthProvider
-const AppWithAuth = () => {
+// Router component with AuthProvider
+const AppRouter = () => {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute>
-              <Index />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/products" 
-          element={
-            <ProtectedRoute>
-              <Products />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/orders" 
-          element={
-            <ProtectedRoute>
-              <Orders />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/customers" 
-          element={
-            <ProtectedRoute>
-              <Customers />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/reports" 
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/users" 
-          element={
-            <ProtectedRoute>
-              <Users />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/pos-session" 
-          element={
-            <ProtectedRoute>
-              <POSSession />
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/pos-shop" 
-          element={
-            <ProtectedRoute>
-              <POSShop />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <Toaster />
-      <Sonner />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          
+          <Route 
+            path="/" 
+            element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/products" 
+            element={
+              <ProtectedRoute>
+                <Products />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/orders" 
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/customers" 
+            element={
+              <ProtectedRoute>
+                <Customers />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/reports" 
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/users" 
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/pos-session" 
+            element={
+              <ProtectedRoute>
+                <POSSession />
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/pos-shop" 
+            element={
+              <ProtectedRoute>
+                <POSShop />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <Toaster />
+        <Sonner />
+      </AuthProvider>
+    </BrowserRouter>
   );
 };
 
-// Fixed App component structure with proper nesting of providers
+// App component with proper provider nesting
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
-        <AppWithAuth />
-      </BrowserRouter>
+      <AppRouter />
     </TooltipProvider>
   </QueryClientProvider>
 );
