@@ -5,7 +5,7 @@ import { Order } from '@/utils/data';
 import { ReceiptData } from './pdfTypes';
 
 export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
-  const { storeName, order, customer, taxRate, notes } = data;
+  const { storeName, order, customer, taxRate, notes, isMerchantCopy } = data;
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -19,6 +19,14 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text(storeName, 40, yPos, { align: 'center' });
+  
+  // Add merchant copy watermark if needed
+  if (isMerchantCopy) {
+    doc.setFontSize(10);
+    doc.setTextColor(180, 180, 180);
+    doc.text("MERCHANT COPY", 40, yPos + 20, { align: 'center' });
+    doc.setTextColor(0, 0, 0);
+  }
   
   yPos += lineHeight;
   doc.setFontSize(8);
@@ -45,15 +53,7 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
 
   // Items table
   yPos += 2;
-  const tableHeaders = [['Item', 'Qty', 'Price', 'Total']];
   
-  const tableData = order.items.map(item => [
-    item.name,
-    item.quantity.toString(),
-    `$${item.price.toFixed(2)}`,
-    `$${(item.price * item.quantity).toFixed(2)}`
-  ]);
-
   // Calculate subtotal, tax, and final total
   const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = taxRate ? subtotal * (taxRate / 100) : 0;
@@ -62,8 +62,13 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   // Use autoTable with configuration object syntax
   doc.autoTable({
     startY: yPos,
-    head: tableHeaders,
-    body: tableData,
+    head: [['Item', 'Qty', 'Price', 'Total']],
+    body: order.items.map(item => [
+      item.name,
+      item.quantity.toString(),
+      `$${item.price.toFixed(2)}`,
+      `$${(item.price * item.quantity).toFixed(2)}`
+    ]),
     theme: 'plain',
     styles: {
       fontSize: 8,
@@ -121,3 +126,6 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   
   return doc;
 };
+
+// Alias for backward compatibility
+export const generateOrderReceiptPDF = generateReceiptPdf;

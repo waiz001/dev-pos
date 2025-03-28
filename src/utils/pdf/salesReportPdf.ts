@@ -28,6 +28,17 @@ export const generateSalesReportPdf = (data: SalesReportData): jsPDF => {
     ["Average Order Value", `$${totals.averageOrderValue.toFixed(2)}`]
   ];
 
+  // Use autoTable with configuration object syntax
+  doc.autoTable({
+    startY: 46,
+    head: [['Metric', 'Value']],
+    body: summaryData,
+    theme: 'grid',
+    styles: { fontSize: 10 },
+    headStyles: { fillColor: [41, 128, 185] },
+    margin: { top: 15 }
+  });
+
   // Add payment method breakdown if available
   if (totals.paymentMethods && Object.keys(totals.paymentMethods).length > 0) {
     doc.text("Payment Methods", 14, 78);
@@ -115,4 +126,56 @@ export const generateSalesReportPdf = (data: SalesReportData): jsPDF => {
   }
 
   return doc;
+};
+
+// Alias for backward compatibility
+export const generateDailySalesReportPDF = (orders: Order[]): jsPDF => {
+  // Calculate totals
+  const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
+  const totalOrders = orders.length;
+  const averageOrderValue = totalSales / totalOrders || 0;
+  
+  // Count payment methods
+  const paymentMethods: Record<string, number> = {};
+  orders.forEach(order => {
+    const method = order.paymentMethod;
+    if (method) {
+      paymentMethods[method] = (paymentMethods[method] || 0) + order.total;
+    }
+  });
+  
+  // Get top products
+  const productSales: Record<string, { name: string, quantity: number, total: number }> = {};
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      if (!productSales[item.id]) {
+        productSales[item.id] = {
+          name: item.name,
+          quantity: 0,
+          total: 0
+        };
+      }
+      productSales[item.id].quantity += item.quantity;
+      productSales[item.id].total += item.price * item.quantity;
+    });
+  });
+  
+  const topProducts = Object.values(productSales)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+  
+  // Generate the report
+  return generateSalesReportPdf({
+    title: "Daily Sales Report",
+    orders: orders,
+    startDate: new Date().toLocaleDateString(),
+    endDate: new Date().toLocaleDateString(),
+    totals: {
+      totalSales,
+      totalOrders,
+      averageOrderValue,
+      paymentMethods,
+      topProducts
+    }
+  });
 };
