@@ -11,6 +11,15 @@ interface ProductGridProps {
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
+  // Guard against empty products array
+  if (!products || products.length === 0) {
+    return (
+      <div className="text-center p-8 text-gray-500">
+        No products available in this category.
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {products.map((product) => (

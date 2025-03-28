@@ -21,7 +21,7 @@ const AddProductButton = () => {
       setIsOpen(false);
       toast.success(`Product "${newProduct.name}" added successfully`);
       
-      // Force a rerender by reloading the data without refreshing the page
+      // Dispatch the custom event to notify other components about the product update
       window.dispatchEvent(new CustomEvent('product-updated'));
     } catch (error) {
       toast.error("Failed to add product");

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -17,6 +18,7 @@ import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, FileDown, FileUp } from "lucide-react";
 import ProductForm from "@/components/forms/ProductForm";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
+import AddProductButton from "@/components/forms/AddProductButton";
 
 const ProductFormWrapper = ({ initialData, onSuccess }) => {
   const onSubmit = (formData) => {
@@ -32,6 +34,9 @@ const ProductFormWrapper = ({ initialData, onSuccess }) => {
       if (onSuccess) {
         onSuccess();
       }
+      
+      // Dispatch event to update the product list
+      window.dispatchEvent(new CustomEvent('product-updated'));
     } catch (error) {
       console.error("Error submitting product form:", error);
       toast.error("Failed to save product");
@@ -49,15 +54,19 @@ const Products = () => {
   const [editProduct, setEditProduct] = useState(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
+  // This effect will run once on component mount and set up the event listener
   useEffect(() => {
-    setProducts(allProducts);
-    
     const handleProductUpdated = () => {
       setProducts([...allProducts]);
     };
     
+    // Add event listener
     window.addEventListener('product-updated', handleProductUpdated);
     
+    // Initial load
+    setProducts([...allProducts]);
+    
+    // Cleanup
     return () => {
       window.removeEventListener('product-updated', handleProductUpdated);
     };
@@ -78,7 +87,7 @@ const Products = () => {
   const handleDelete = (id: string) => {
     try {
       deleteProductData(id);
-      setProducts(allProducts);
+      setProducts([...allProducts]);
       toast.success("Product deleted successfully");
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -89,6 +98,12 @@ const Products = () => {
   const handleEdit = (product: any) => {
     setEditProduct(product);
     handleOpen();
+  };
+
+  // Safe category name lookup function
+  const getCategoryName = (categoryId: string) => {
+    const category = categories.find(cat => cat.id === categoryId);
+    return category ? category.name : 'N/A';
   };
 
   return (
@@ -108,10 +123,7 @@ const Products = () => {
               <FileUp className="mr-2 h-4 w-4" />
               Import Excel
             </Button>
-            <Button onClick={handleOpen}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
+            <AddProductButton />
           </div>
         </div>
 
@@ -134,7 +146,7 @@ const Products = () => {
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell>{categories.find(cat => cat.id === product.category)?.name || 'N/A'}</TableCell>
+                    <TableCell>{getCategoryName(product.category)}</TableCell>
                     <TableCell>${product.price.toFixed(2)}</TableCell>
                     <TableCell>{product.inStock}</TableCell>
                     <TableCell className="text-right">
@@ -176,7 +188,7 @@ const Products = () => {
           onOpenChange={setIsImportDialogOpen}
           type="products"
           onImportComplete={() => {
-            setProducts(allProducts);
+            setProducts([...allProducts]);
           }}
         />
       </div>
