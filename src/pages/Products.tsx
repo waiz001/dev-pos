@@ -12,7 +12,8 @@ import {
   deleteProduct as deleteProductData,
   addProduct as addProductData,
   updateProduct as updateProductData,
-  categories
+  categories,
+  stores
 } from "@/utils/data";
 import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, FileDown, FileUp, Download } from "lucide-react";

@@ -56,7 +56,8 @@ const RecoveryForm = ({ onSuccess }) => {
       
       // Calculate new balance (balance is represented as totalSpent in the data structure)
       // We just need to reduce the totalSpent directly as totalSpent represents the balance
-      const updatedTotalSpent = customer.totalSpent - data.amount;
+      const currentTotalSpent = customer.totalSpent || 0;
+      const updatedTotalSpent = currentTotalSpent - data.amount;
       
       // Update customer with new totalSpent (reducing the balance)
       const updatedCustomer = updateCustomer(customer.id, {
@@ -108,9 +109,9 @@ const RecoveryForm = ({ onSuccess }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {customers.filter(customer => customer.totalSpent > 0).map((customer) => (
+                  {customers.filter(customer => (customer.totalSpent || 0) > 0).map((customer) => (
                     <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name} (Balance: ${customer.totalSpent.toFixed(2)})
+                      {customer.name} (Balance: ${(customer.totalSpent || 0).toFixed(2)})
                     </SelectItem>
                   ))}
                 </SelectContent>

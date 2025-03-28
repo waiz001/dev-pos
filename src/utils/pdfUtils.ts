@@ -1,7 +1,13 @@
-
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Order, Customer, Product, paymentMethods, stores } from "./data";
+
+// Extend jsPDF types to include autoTable
+declare module "jspdf" {
+  interface jsPDF {
+    autoTable: typeof autoTable;
+  }
+}
 
 /**
  * Generate a Daily Sales Report PDF
@@ -52,7 +58,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   }
   
   // Start position for Orders table (after payment table)
-  let yPos = doc.autoTable.previous ? doc.autoTable.previous.finalY + 15 : 90;
+  let yPos = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : 90;
   
   // Store Breakdown if applicable
   if (orders.some(order => order.storeId)) {
@@ -84,7 +90,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
     }
     
     // Update yPos for Orders table
-    yPos = doc.autoTable.previous ? doc.autoTable.previous.finalY + 15 : yPos + 20;
+    yPos = doc.lastAutoTable ? doc.lastAutoTable.finalY + 15 : yPos + 20;
   }
   
   // Orders Table

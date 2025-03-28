@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   orders as allOrders, 
-  getOrderById, 
+  getOrder,
   Order
 } from "@/utils/data";
 import { formatDistanceToNow } from "date-fns";
@@ -61,7 +61,7 @@ const AllOrdersDialog: React.FC<AllOrdersDialogProps> = ({
   };
 
   const handleSelectOrder = (orderId: string) => {
-    const order = getOrderById(orderId);
+    const order = getOrder(orderId);
     if (order) {
       onSelectOrder(order);
       onOpenChange(false);

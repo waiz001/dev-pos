@@ -17,6 +17,9 @@ export interface Customer {
   phone: string;
   address: string;
   notes?: string;
+  totalOrders?: number;
+  totalSpent?: number;
+  registrationDate?: Date;
 }
 
 export interface CartItem {
@@ -36,7 +39,7 @@ export interface Product {
   image: string;
   barcode?: string;
   inStock: number;
-  storeId?: string; // New field to associate product with a store
+  storeId?: string;
 }
 
 export interface Order {
@@ -50,7 +53,27 @@ export interface Order {
   paymentMethod: string;
   notes?: string;
   status: "completed" | "pending" | "cancelled" | "in-progress";
-  storeId?: string; // New field to associate order with a store
+  storeId?: string;
+}
+
+export interface Report {
+  id: string;
+  name: string;
+  type: "sales" | "inventory" | "customers" | "custom";
+  description: string;
+  format: "pdf" | "excel" | "csv";
+  createdAt: Date;
+  lastRun?: Date;
+  scheduled: boolean;
+  scheduledFrequency?: "daily" | "weekly" | "monthly" | null;
+}
+
+export interface Setting {
+  id: string;
+  name: string;
+  value: string;
+  category: "general" | "payment" | "tax" | "printer" | "notification" | "security";
+  description: string;
 }
 
 export const categories: Category[] = [
@@ -121,7 +144,6 @@ export const stores = [
   }
 ];
 
-// Mock data
 export let products: Product[] = [
   {
     id: "product-1",
@@ -228,7 +250,62 @@ export let orders: Order[] = [
   },
 ];
 
-// CRUD operations for Products
+export let reports: Report[] = [
+  {
+    id: "report-1",
+    name: "Daily Sales Report",
+    type: "sales",
+    description: "Daily sales summary with payment method breakdown",
+    format: "pdf",
+    createdAt: new Date(),
+    scheduled: true,
+    scheduledFrequency: "daily"
+  },
+  {
+    id: "report-2",
+    name: "Inventory Status",
+    type: "inventory",
+    description: "Current inventory levels and low stock alerts",
+    format: "excel",
+    createdAt: new Date(),
+    scheduled: true,
+    scheduledFrequency: "weekly"
+  },
+  {
+    id: "report-3",
+    name: "Customer Analytics",
+    type: "customers",
+    description: "Customer spending habits and frequency",
+    format: "pdf",
+    createdAt: new Date(),
+    scheduled: false
+  }
+];
+
+export let settings: Setting[] = [
+  {
+    id: "setting-1",
+    name: "Store Name",
+    value: "My POS Store",
+    category: "general",
+    description: "Name of your store displayed on receipts"
+  },
+  {
+    id: "setting-2",
+    name: "Tax Rate",
+    value: "8.5",
+    category: "tax",
+    description: "Default sales tax percentage"
+  },
+  {
+    id: "setting-3",
+    name: "Email Notifications",
+    value: "true",
+    category: "notification",
+    description: "Send email notifications for new orders"
+  }
+];
+
 export const addProduct = (productData: Partial<Product>): Product => {
   const newProduct: Product = {
     id: uuidv4(),
@@ -273,7 +350,6 @@ export const deleteProduct = (id: string): boolean => {
   return true;
 };
 
-// CRUD operations for Customers
 export const addCustomer = (customerData: Omit<Customer, "id">): Customer => {
   const newCustomer: Customer = {
     id: uuidv4(),
@@ -311,7 +387,6 @@ export const deleteCustomer = (id: string): boolean => {
   return true;
 };
 
-// CRUD operations for Orders
 export const addOrder = (orderData: Omit<Order, "id">): Order => {
   const newOrder: Order = {
     id: uuidv4(),
@@ -349,7 +424,87 @@ export const deleteOrder = (id: string): boolean => {
   return true;
 };
 
-// Update template functions for import/export
+export const addReport = (reportData: Omit<Report, "id" | "createdAt">): Report => {
+  const newReport: Report = {
+    id: uuidv4(),
+    ...reportData,
+    createdAt: new Date()
+  };
+  reports.push(newReport);
+  return newReport;
+};
+
+export const getReport = (id: string): Report | undefined => {
+  return reports.find((report) => report.id === id);
+};
+
+export const updateReport = (id: string, reportData: Partial<Report>): Report | null => {
+  const reportIndex = reports.findIndex((report) => report.id === id);
+  if (reportIndex === -1) {
+    return null;
+  }
+
+  reports[reportIndex] = {
+    ...reports[reportIndex],
+    ...reportData,
+  };
+
+  return reports[reportIndex];
+};
+
+export const deleteReport = (id: string): boolean => {
+  const reportIndex = reports.findIndex((report) => report.id === id);
+  if (reportIndex === -1) {
+    return false;
+  }
+
+  reports.splice(reportIndex, 1);
+  return true;
+};
+
+export const getSettingsByCategory = (category: Setting["category"]): Setting[] => {
+  return settings.filter(setting => setting.category === category);
+};
+
+export const getSetting = (id: string): Setting | undefined => {
+  return settings.find((setting) => setting.id === id);
+};
+
+export const updateSetting = (id: string, settingData: Partial<Setting>): Setting | null => {
+  const settingIndex = settings.findIndex((setting) => setting.id === id);
+  if (settingIndex === -1) {
+    return null;
+  }
+
+  settings[settingIndex] = {
+    ...settings[settingIndex],
+    ...settingData,
+  };
+
+  return settings[settingIndex];
+};
+
+export const addSetting = (settingData: Omit<Setting, "id">): Setting => {
+  const newSetting: Setting = {
+    id: uuidv4(),
+    ...settingData,
+  };
+  settings.push(newSetting);
+  return newSetting;
+};
+
+export const deleteSetting = (id: string): boolean => {
+  const settingIndex = settings.findIndex((setting) => setting.id === id);
+  if (settingIndex === -1) {
+    return false;
+  }
+
+  settings.splice(settingIndex, 1);
+  return true;
+};
+
+export const getOrderById = getOrder;
+
 export const generateProductTemplate = () => {
   return {
     headers: ["name", "price", "category", "description", "barcode", "inStock", "storeId", "image"],

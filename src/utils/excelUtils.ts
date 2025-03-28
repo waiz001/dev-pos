@@ -145,9 +145,9 @@ export const importCustomersFromExcel = async (file: File): Promise<{
           phone: row.phone || '',
           address: row.address || '',
           notes: row.notes || '',
-          registrationDate: new Date(),
           totalOrders: 0,
-          totalSpent: 0
+          totalSpent: 0,
+          registrationDate: new Date(),
         };
         
         // Update existing customer or add new one
@@ -155,8 +155,8 @@ export const importCustomersFromExcel = async (file: File): Promise<{
           // Keep existing totalOrders and totalSpent for updates
           const existingCustomer = customers.find(c => c.id === row.id);
           if (existingCustomer) {
-            customerData.totalOrders = existingCustomer.totalOrders;
-            customerData.totalSpent = existingCustomer.totalSpent;
+            customerData.totalOrders = existingCustomer.totalOrders || 0;
+            customerData.totalSpent = existingCustomer.totalSpent || 0;
           }
           
           const updated = updateCustomer(row.id, customerData);
