@@ -13,7 +13,7 @@ import {
   addProduct as addProductData,
   updateProduct as updateProductData,
   categories,
-  getStores
+  stores
 } from "@/utils/data";
 import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, FileDown, FileUp, Download } from "lucide-react";
@@ -69,7 +69,7 @@ const Products = () => {
     
     // Initial load
     setProducts([...allProducts]);
-    setStores(getStores());
+    setStores(stores);
     
     // Cleanup
     return () => {

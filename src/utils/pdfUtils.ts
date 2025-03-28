@@ -6,6 +6,9 @@ import { Order, Customer, Product, paymentMethods, stores } from "./data";
 declare module "jspdf" {
   interface jsPDF {
     autoTable: typeof autoTable;
+    lastAutoTable?: {
+      finalY: number;
+    };
   }
 }
 
@@ -48,7 +51,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
   
   // Add the payment method table
   if (paymentData.length > 0) {
-    autoTable(doc, {
+    doc.autoTable({
       startY: 70,
       head: [["Payment Method", "Amount"]],
       body: paymentData,
@@ -82,7 +85,7 @@ export const generateDailySalesReportPDF = (orders: Order[]) => {
     
     // Add the store table
     if (storeData.length > 0) {
-      autoTable(doc, {
+      doc.autoTable({
         startY: yPos,
         head: [["Store", "Amount"]],
         body: storeData,
@@ -225,7 +228,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Create the items table
-  autoTable(doc, {
+  doc.autoTable({
     startY: yPos,
     theme: 'plain',
     head: [['Item', 'Qty', 'Price', 'Total']],
@@ -249,7 +252,7 @@ export const generateOrderReceiptPDF = (order: Order & { isMerchantCopy?: boolea
   });
   
   // Get the final Y position after the table
-  yPos = doc.autoTable.previous ? doc.autoTable.previous.finalY + 10 : yPos + 50;
+  yPos = doc.lastAutoTable ? doc.lastAutoTable.finalY + 10 : yPos + 50;
   
   // Totals section
   const subtotal = order.total - (order.tax || 0);

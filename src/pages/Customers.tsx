@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -128,7 +127,7 @@ const Customers = () => {
               <FileUp className="mr-2 h-4 w-4" />
               Import Excel
             </Button>
-            <AddCustomerButton onCustomerAdded={() => setCustomers([...allCustomers])} />
+            <AddCustomerButton />
           </div>
         </div>
 
