@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -15,11 +16,10 @@ import {
   stores
 } from "@/utils/data";
 import { toast } from "sonner";
-import { PlusCircle, Pencil, Trash2, FileDown, FileUp, Download } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, FileDown, FileUp } from "lucide-react";
 import ProductForm from "@/components/forms/ProductForm";
 import ImportExcelDialog from "@/components/import-export/ImportExcelDialog";
 import AddProductButton from "@/components/forms/AddProductButton";
-import { generateProductsTemplate } from "@/utils/pdfUtils";
 import * as XLSX from 'xlsx';
 
 const ProductFormWrapper = ({ initialData, onSuccess }) => {
@@ -137,9 +137,14 @@ const Products = () => {
   // Download template function
   const downloadProductTemplate = () => {
     try {
-      const template = generateProductsTemplate();
+      // Create simple template with headers
+      const headers = ["name", "price", "category", "description", "barcode", "inStock", "storeId", "image"];
+      const sampleData = [
+        ["Sample Product", "9.99", "electronics", "Sample description", "12345678", "100", "store-1", "https://example.com/image.jpg"]
+      ];
+      
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([template.headers, ...template.data]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
       XLSX.utils.book_append_sheet(wb, ws, "Products");
       XLSX.writeFile(wb, "product_import_template.xlsx");
       toast.success("Template downloaded successfully");
@@ -163,7 +168,7 @@ const Products = () => {
               className="max-w-md"
             />
             <Button variant="outline" onClick={downloadProductTemplate}>
-              <Download className="mr-2 h-4 w-4" />
+              <FileDown className="mr-2 h-4 w-4" />
               Template
             </Button>
             <Button onClick={() => setIsImportDialogOpen(true)}>
