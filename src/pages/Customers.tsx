@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -11,8 +12,7 @@ import {
   updateCustomer 
 } from "@/utils/data";
 import { toast } from "sonner";
-import { PlusCircle, Pencil, Trash2, FileUp, Download } from "lucide-react";
-import { generateCustomersTemplate } from "@/utils/pdfUtils";
+import { PlusCircle, Pencil, Trash2, FileUp } from "lucide-react";
 import * as XLSX from 'xlsx';
 
 // Import CustomerForm and AddCustomerButton from your components directory
@@ -91,21 +91,6 @@ const Customers = () => {
     }
   };
 
-  // Download template function
-  const downloadCustomerTemplate = () => {
-    try {
-      const template = generateCustomersTemplate();
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet([template.headers, ...template.data]);
-      XLSX.utils.book_append_sheet(wb, ws, "Customers");
-      XLSX.writeFile(wb, "customer_import_template.xlsx");
-      toast.success("Template downloaded successfully");
-    } catch (error) {
-      console.error("Error generating template:", error);
-      toast.error("Failed to download template");
-    }
-  };
-
   return (
     <MainLayout>
       <div className="container mx-auto py-10">
@@ -119,10 +104,6 @@ const Customers = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="max-w-md"
             />
-            <Button variant="outline" onClick={downloadCustomerTemplate}>
-              <Download className="mr-2 h-4 w-4" />
-              Template
-            </Button>
             <Button onClick={() => setIsImportDialogOpen(true)}>
               <FileUp className="mr-2 h-4 w-4" />
               Import Excel

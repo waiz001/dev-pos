@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Badge } from "@/components/ui/badge";
@@ -17,18 +18,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores } from "@/utils/data";
 import { toast } from "sonner";
-import { FileDown, FileUp, Printer, RotateCcw, ListOrdered } from "lucide-react";
+import { RotateCcw, ListOrdered } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
 import RecoveryForm from "@/components/pos/RecoveryForm";
 import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
-import { generateDailySalesReportPDF, generateOrderReceiptPDF } from "@/utils/pdfUtils";
-import PDFViewer from "@/components/reports/PDFViewer";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -38,11 +35,8 @@ const POSSession = () => {
   const [selectedCustomerId, setSelectedCustomerId] = useState("guest");
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cash");
   const [isRecoveryDialogOpen, setIsRecoveryDialogOpen] = useState(false);
-  const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isAllOrdersDialogOpen, setIsAllOrdersDialogOpen] = useState(false);
-  const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   
@@ -146,32 +140,10 @@ const POSSession = () => {
         
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
-          
-          try {
-            const customerReceipt = generateOrderReceiptPDF(updatedOrder);
-            setPdfDocument(customerReceipt);
-            customerReceipt.save("customer_receipt.pdf");
-            
-            const merchantReceipt = generateOrderReceiptPDF({
-              ...updatedOrder,
-              isMerchantCopy: true
-            });
-            merchantReceipt.save("merchant_receipt.pdf");
-            
-            setIsPrintDialogOpen(true);
-            
-            resetCart();
-            
-            toast.success("Order completed and receipts downloaded", {
-              position: "bottom-center"
-            });
-          } catch (error) {
-            console.error("Error generating receipts:", error);
-            toast.error("Failed to generate receipts, but order was saved", {
-              position: "bottom-center"
-            });
-            resetCart();
-          }
+          resetCart();
+          toast.success("Order completed successfully", {
+            position: "bottom-center"
+          });
         } else {
           toast.error("Failed to update order", {
             position: "bottom-center"
@@ -180,32 +152,10 @@ const POSSession = () => {
       } else {
         const order = addOrder(orderData);
         setLastOrderId(order.id);
-        
-        try {
-          const customerReceipt = generateOrderReceiptPDF(order);
-          setPdfDocument(customerReceipt);
-          customerReceipt.save("customer_receipt.pdf");
-          
-          const merchantReceipt = generateOrderReceiptPDF({
-            ...order,
-            isMerchantCopy: true
-          });
-          merchantReceipt.save("merchant_receipt.pdf");
-          
-          setIsPrintDialogOpen(true);
-          
-          resetCart();
-          
-          toast.success("Order completed and receipts downloaded", {
-            position: "bottom-center"
-          });
-        } catch (error) {
-          console.error("Error generating receipts:", error);
-          toast.error("Failed to generate receipts, but order was saved", {
-            position: "bottom-center"
-          });
-          resetCart();
-        }
+        resetCart();
+        toast.success("Order completed successfully", {
+          position: "bottom-center"
+        });
       }
     } catch (error) {
       console.error("Error creating order:", error);
@@ -259,120 +209,6 @@ const POSSession = () => {
     setCurrentOrderId(order.id);
     toast.info(`Order ${order.id} loaded`);
   };
-
-  const generateReceipt = (order?: Order) => {
-    if (!order && !lastOrderId) {
-      toast.error("No order to print", {
-        position: "bottom-center"
-      });
-      return;
-    }
-    
-    const orderToPrint = order || orders.find(o => o.id === lastOrderId);
-    if (!orderToPrint) {
-      toast.error("Order not found", {
-        position: "bottom-center"
-      });
-      return;
-    }
-    
-    try {
-      const customerReceipt = generateOrderReceiptPDF(orderToPrint);
-      setPdfDocument(customerReceipt);
-      customerReceipt.save("customer_receipt.pdf");
-      
-      const merchantReceipt = generateOrderReceiptPDF({
-        ...orderToPrint,
-        isMerchantCopy: true
-      });
-      merchantReceipt.save("merchant_receipt.pdf");
-      
-      setIsPrintDialogOpen(true);
-      
-      toast.success("Receipts downloaded successfully", {
-        position: "bottom-center"
-      });
-    } catch (error) {
-      console.error("Error generating receipts:", error);
-      toast.error("Failed to generate receipts. Please try again.", {
-        position: "bottom-center"
-      });
-    }
-  };
-  
-  const printSlip = () => {
-    if (cart.length === 0) {
-      toast.error("Please add items to cart first", {
-        position: "bottom-center"
-      });
-      return;
-    }
-    
-    const selectedCustomer = selectedCustomerId !== "guest" 
-      ? customers.find(c => c.id === selectedCustomerId) 
-      : null;
-    
-    const tempOrder = {
-      id: "preview-" + Date.now(),
-      date: new Date(),
-      items: [...cart],
-      total: calculateTotal(),
-      tax: calculateTax(),
-      customerName: selectedCustomer?.name || "Walk-in Customer",
-      paymentMethod: selectedPaymentMethod,
-      status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
-      storeId: currentStoreId || ""
-    };
-    
-    try {
-      const customerReceipt = generateOrderReceiptPDF(tempOrder);
-      setPdfDocument(customerReceipt);
-      customerReceipt.save("customer_receipt.pdf");
-      
-      const merchantReceipt = generateOrderReceiptPDF({
-        ...tempOrder,
-        isMerchantCopy: true
-      });
-      merchantReceipt.save("merchant_receipt.pdf");
-      
-      setIsPrintDialogOpen(true);
-      
-      toast.success("Receipts downloaded successfully", {
-        position: "bottom-center"
-      });
-    } catch (error) {
-      console.error("Error printing slip:", error);
-      toast.error("Failed to generate receipts. Please try again.", {
-        position: "bottom-center"
-      });
-    }
-  };
-
-  const generateDailySalesReport = () => {
-    const today = new Date().toDateString();
-    const todaysOrders = orders.filter(
-      (order) => new Date(order.date).toDateString() === today
-    );
-    
-    if (todaysOrders.length === 0) {
-      toast.error("No sales recorded today");
-      return;
-    }
-    
-    try {
-      const reportPdf = generateDailySalesReportPDF(todaysOrders);
-      setPdfDocument(reportPdf);
-      reportPdf.save("daily_sales_report.pdf");
-      setIsReportDialogOpen(true);
-      
-      toast.success("Sales report downloaded successfully");
-    } catch (error) {
-      console.error("Error generating report:", error);
-      toast.error("Failed to generate report", {
-        position: "bottom-center"
-      });
-    }
-  };
   
   const [todayOrders, setTodayOrders] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
@@ -417,22 +253,6 @@ const POSSession = () => {
               <Button variant="outline" onClick={() => setIsAllOrdersDialogOpen(true)}>
                 <ListOrdered className="mr-2 h-4 w-4" />
                 All Orders
-              </Button>
-              
-              <Button variant="outline" onClick={() => { 
-                if (lastOrderId) {
-                  generateReceipt();
-                } else {
-                  toast.error("No recent order to print");
-                }
-              }}>
-                <Printer className="mr-2 h-4 w-4" />
-                Print Last Order
-              </Button>
-              
-              <Button variant="outline" onClick={generateDailySalesReport}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Daily Report
               </Button>
             </div>
             
@@ -567,15 +387,6 @@ const POSSession = () => {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      className="mt-4"
-                      variant="outline"
-                      onClick={printSlip}
-                      disabled={cart.length === 0}
-                    >
-                      <Printer className="mr-2 h-4 w-4" />
-                      Print Slip
-                    </Button>
-                    <Button
                       className="mt-4 flex-1"
                       onClick={handleCheckout}
                       disabled={cart.length === 0}
@@ -598,22 +409,6 @@ const POSSession = () => {
           <RecoveryForm onSuccess={() => setIsRecoveryDialogOpen(false)} />
         </DialogContent>
       </Dialog>
-
-      <PDFViewer
-        open={isPrintDialogOpen}
-        onOpenChange={setIsPrintDialogOpen}
-        pdfDocument={pdfDocument}
-        title="Order Receipt"
-        filename="receipt.pdf"
-      />
-      
-      <PDFViewer
-        open={isReportDialogOpen}
-        onOpenChange={setIsReportDialogOpen}
-        pdfDocument={pdfDocument}
-        title="Daily Sales Report"
-        filename="daily_sales_report.pdf"
-      />
       
       <AllOrdersDialog
         open={isAllOrdersDialogOpen}

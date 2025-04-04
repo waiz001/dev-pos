@@ -31,8 +31,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { generateOrderReceiptPDF } from "@/utils/pdfUtils";
-import { Printer } from "lucide-react";
 
 const orderSchema = z.object({
   customerId: z.string().optional(),
@@ -141,45 +139,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     setSearchQuery("");
     
     toast.success("Order saved successfully");
-  };
-  
-  const printSlip = () => {
-    if (cart.length === 0) {
-      toast.error("Please add at least one product to print a slip");
-      return;
-    }
-    
-    // Create a temporary order object for printing
-    const selectedCustomer = customers.find(c => c.id === form.getValues().customerId);
-    const tempOrder = {
-      id: "preview-" + Date.now(),
-      date: new Date(),
-      items: cart,
-      total: calculateTotal(),
-      tax: calculateTax(), // Add tax calculation
-      customerName: selectedCustomer?.name || form.getValues().customerName || "Guest",
-      paymentMethod: form.getValues().paymentMethod,
-      notes: form.getValues().notes || "",
-      status: "pending" as "pending" | "completed" | "cancelled" | "in-progress",
-    };
-    
-    try {
-      // Generate customer receipt
-      const customerReceipt = generateOrderReceiptPDF(tempOrder);
-      customerReceipt.save("customer_receipt.pdf");
-      
-      // Generate merchant copy
-      const merchantReceipt = generateOrderReceiptPDF({
-        ...tempOrder,
-        isMerchantCopy: true
-      });
-      merchantReceipt.save("merchant_receipt.pdf");
-      
-      toast.success("Receipts generated and downloaded successfully");
-    } catch (error) {
-      console.error("Error generating receipt:", error);
-      toast.error("Failed to generate receipts. Please try again.");
-    }
   };
 
   return (
@@ -366,14 +325,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
         />
 
         <div className="flex gap-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={printSlip}
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Print Slip
-          </Button>
           <Button type="submit">{buttonText}</Button>
         </div>
       </form>
