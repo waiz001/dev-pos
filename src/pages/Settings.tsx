@@ -64,7 +64,18 @@ const Settings = () => {
           </TabsContent>
           
           <TabsContent value="shops">
-            <ShopManagement />
+            <Card>
+              <CardHeader>
+                <CardTitle>Shop Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Manage your stores/shops here. These shops will appear in the POS Shop page.
+                  Deleting a shop requires administrator verification.
+                </p>
+                <ShopManagement />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

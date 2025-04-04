@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { 
@@ -20,40 +20,44 @@ import {
   Users 
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 
-// Mock store data - in a real app, this would come from your backend
-const stores = [
-  {
-    id: "store-1",
-    name: "Main Store",
-    address: "123 Main Street, Anytown",
-    phone: "+1 (555) 123-4567",
-    hours: "9:00 AM - 9:00 PM",
-    employees: 5,
-    image: "https://images.unsplash.com/photo-1582539511848-55707aee0625?auto=format&fit=crop&q=80&w=500&h=300"
-  },
-  {
-    id: "store-2",
-    name: "Downtown Branch",
-    address: "456 Commerce Ave, Downtown",
-    phone: "+1 (555) 987-6543",
-    hours: "8:00 AM - 8:00 PM",
-    employees: 3,
-    image: "https://images.unsplash.com/photo-1604719312566-8912e9c8a213?auto=format&fit=crop&q=80&w=500&h=300"
-  },
-  {
-    id: "store-3",
-    name: "Shopping Mall Kiosk",
-    address: "789 Mall Plaza, Shop #42",
-    phone: "+1 (555) 456-7890",
-    hours: "10:00 AM - 10:00 PM",
-    employees: 2,
-    image: "https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?auto=format&fit=crop&q=80&w=500&h=300"
+// Load shops from localStorage or use defaults from utils/data
+const loadShops = () => {
+  try {
+    const storedShops = localStorage.getItem('shops');
+    if (storedShops) {
+      return JSON.parse(storedShops);
+    }
+    
+    // If no shops in localStorage, get the default shops from utils/data
+    const { stores } = require('@/utils/data');
+    return stores;
+  } catch (error) {
+    console.error('Error loading shops:', error);
+    return [];
   }
-];
+};
 
 const POSShop = () => {
   const navigate = useNavigate();
+  const [shops, setShops] = useState([]);
+
+  useEffect(() => {
+    setShops(loadShops());
+    
+    // Set up an event listener to refresh shops when they change
+    const handleShopsUpdated = () => {
+      setShops(loadShops());
+      toast.info("Shop list has been updated");
+    };
+    
+    window.addEventListener('shops-updated', handleShopsUpdated);
+    
+    return () => {
+      window.removeEventListener('shops-updated', handleShopsUpdated);
+    };
+  }, []);
 
   const handleStartPOS = (storeId: string) => {
     navigate(`/pos-session?storeId=${storeId}`);
@@ -69,56 +73,65 @@ const POSShop = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {stores.map((store) => (
-            <Card key={store.id} className="overflow-hidden flex flex-col">
-              <div className="h-48 overflow-hidden">
-                <img 
-                  src={store.image} 
-                  alt={store.name} 
-                  className="w-full h-full object-cover transition-transform hover:scale-105"
-                />
-              </div>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle>{store.name}</CardTitle>
+        {shops.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 flex flex-col items-center justify-center h-40">
+              <p className="text-muted-foreground mb-4">No shops available. Please add shops in Settings &gt; Shops.</p>
+              <Button onClick={() => navigate("/settings")}>Go to Settings</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {shops.map((store) => (
+              <Card key={store.id} className="overflow-hidden flex flex-col">
+                <div className="h-48 overflow-hidden">
+                  <img 
+                    src={store.image} 
+                    alt={store.name} 
+                    className="w-full h-full object-cover transition-transform hover:scale-105"
+                  />
                 </div>
-                <CardDescription>Manage POS for this location</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                    <span>{store.address}</span>
-                  </div>
+                <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{store.phone}</span>
+                    <Building2 className="h-5 w-5 text-muted-foreground" />
+                    <CardTitle>{store.name}</CardTitle>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span>{store.hours}</span>
+                  <CardDescription>Manage POS for this location</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <span>{store.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{store.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span>{store.hours}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>{store.employees} employees</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{store.employees} employees</span>
-                  </div>
-                </div>
-              </CardContent>
-              <Separator />
-              <CardFooter className="pt-4">
-                <Button 
-                  className="w-full" 
-                  onClick={() => handleStartPOS(store.id)}
-                >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Start POS Session
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+                <Separator />
+                <CardFooter className="pt-4">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleStartPOS(store.id)}
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Start POS Session
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </MainLayout>
   );
