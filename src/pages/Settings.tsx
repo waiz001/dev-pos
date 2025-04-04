@@ -4,6 +4,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -44,39 +45,41 @@ const Settings = () => {
             <TabsTrigger value="shops" className="flex-1">Shops</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="general">
-            <Card>
-              <CardHeader>
-                <CardTitle>General Settings</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>General settings content will go here.</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="payments">
-            <PaymentMethodsManagement />
-          </TabsContent>
-          
-          <TabsContent value="printer">
-            <PrinterConfiguration />
-          </TabsContent>
-          
-          <TabsContent value="shops">
-            <Card>
-              <CardHeader>
-                <CardTitle>Shop Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Manage your stores/shops here. These shops will appear in the POS Shop page.
-                  Deleting a shop requires administrator verification.
-                </p>
-                <ShopManagement />
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <ScrollArea className="h-[calc(100vh-250px)]">
+            <TabsContent value="general">
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Settings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>General settings content will go here.</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="payments">
+              <PaymentMethodsManagement />
+            </TabsContent>
+            
+            <TabsContent value="printer">
+              <PrinterConfiguration />
+            </TabsContent>
+            
+            <TabsContent value="shops">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Shop Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Manage your stores/shops here. These shops will appear in the POS Shop page.
+                    Deleting a shop requires administrator verification.
+                  </p>
+                  <ShopManagement />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </ScrollArea>
         </Tabs>
       </div>
     </MainLayout>

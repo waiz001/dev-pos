@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import UserForm from "./UserForm";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
@@ -32,17 +33,24 @@ const AddUserButton = () => {
 
   return (
     <>
-      <Button onClick={() => setIsOpen(true)}>
+      <Button 
+        onClick={() => setIsOpen(true)} 
+        className="whitespace-nowrap w-full sm:w-auto"
+      >
         <PlusCircle className="mr-2 h-4 w-4" />
         Add User
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
-          <UserForm onSubmit={handleAddUser} buttonText="Add User" />
+          <ScrollArea className="max-h-[calc(90vh-120px)]">
+            <div className="p-1">
+              <UserForm onSubmit={handleAddUser} buttonText="Add User" />
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </>
