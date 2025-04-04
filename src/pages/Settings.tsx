@@ -33,15 +33,15 @@ const Settings = () => {
   // Component implementation
   return (
     <MainLayout>
-      <div className="container mx-auto py-10">
-        <h1 className="text-3xl font-bold mb-6">Settings</h1>
+      <div className="container mx-auto py-6 px-4 md:py-10 md:px-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Settings</h1>
         
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="payments">Payment Methods</TabsTrigger>
-            <TabsTrigger value="printer">Printer</TabsTrigger>
-            <TabsTrigger value="shops">Shops</TabsTrigger>
+          <TabsList className="mb-4 w-full flex flex-wrap md:flex-nowrap overflow-x-auto">
+            <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
+            <TabsTrigger value="payments" className="flex-1">Payment Methods</TabsTrigger>
+            <TabsTrigger value="printer" className="flex-1">Printer</TabsTrigger>
+            <TabsTrigger value="shops" className="flex-1">Shops</TabsTrigger>
           </TabsList>
           
           <TabsContent value="general">

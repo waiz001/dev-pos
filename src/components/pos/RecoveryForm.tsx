@@ -92,7 +92,7 @@ const RecoveryForm = ({ onSuccess }) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-lg mx-auto">
         <FormField
           control={form.control}
           name="customerId"
@@ -104,7 +104,7 @@ const RecoveryForm = ({ onSuccess }) => {
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select customer" />
                   </SelectTrigger>
                 </FormControl>
@@ -122,7 +122,7 @@ const RecoveryForm = ({ onSuccess }) => {
         />
 
         {selectedCustomerId && (
-          <div className="rounded-md bg-muted p-3">
+          <div className="rounded-md bg-muted p-3 w-full">
             <p className="text-sm">Current Balance: <span className="font-semibold">${currentBalance.toFixed(2)}</span></p>
           </div>
         )}
@@ -161,7 +161,7 @@ const RecoveryForm = ({ onSuccess }) => {
                 defaultValue={field.value}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                 </FormControl>
@@ -178,11 +178,11 @@ const RecoveryForm = ({ onSuccess }) => {
           )}
         />
 
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={onSuccess}>
+        <div className="flex flex-col sm:flex-row justify-end gap-3 w-full">
+          <Button type="button" variant="outline" onClick={onSuccess} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
             {isSubmitting ? "Processing..." : "Recover Payment"}
           </Button>
         </div>

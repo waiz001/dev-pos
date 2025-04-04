@@ -62,7 +62,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 w-full max-w-xl mx-auto">
         <FormField
           control={form.control}
           name="name"
@@ -91,7 +91,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="phone"
@@ -135,7 +135,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           )}
         />
 
-        <Button type="submit">{buttonText}</Button>
+        <Button type="submit" className="w-full sm:w-auto">{buttonText}</Button>
       </form>
     </Form>
   );

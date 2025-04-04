@@ -65,11 +65,11 @@ const POSShop = () => {
 
   return (
     <MainLayout>
-      <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">POS Shop</h1>
+      <div className="p-4 md:p-6">
+        <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h1 className="text-2xl md:text-3xl font-bold">POS Shop</h1>
           <div className="flex items-center gap-4">
-            <Button onClick={() => navigate("/")}>Back to Dashboard</Button>
+            <Button onClick={() => navigate("/")} className="w-full md:w-auto">Back to Dashboard</Button>
           </div>
         </div>
 
@@ -81,45 +81,45 @@ const POSShop = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {shops.map((store) => (
-              <Card key={store.id} className="overflow-hidden flex flex-col">
-                <div className="h-48 overflow-hidden">
+              <Card key={store.id} className="overflow-hidden flex flex-col h-full">
+                <div className="h-40 md:h-48 overflow-hidden">
                   <img 
                     src={store.image} 
                     alt={store.name} 
                     className="w-full h-full object-cover transition-transform hover:scale-105"
                   />
                 </div>
-                <CardHeader>
+                <CardHeader className="p-4 md:p-6">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                    <CardTitle>{store.name}</CardTitle>
+                    <Building2 className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                    <CardTitle className="text-lg md:text-xl">{store.name}</CardTitle>
                   </div>
                   <CardDescription>Manage POS for this location</CardDescription>
                 </CardHeader>
-                <CardContent className="flex-1">
-                  <div className="space-y-2 text-sm">
+                <CardContent className="p-4 md:p-6 pt-0 flex-1">
+                  <div className="space-y-2 text-xs md:text-sm">
                     <div className="flex items-start gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <span>{store.address}</span>
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <span className="line-clamp-2">{store.address}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span>{store.phone}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span>{store.hours}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       <span>{store.employees} employees</span>
                     </div>
                   </div>
                 </CardContent>
                 <Separator />
-                <CardFooter className="pt-4">
+                <CardFooter className="p-4 md:p-6">
                   <Button 
                     className="w-full" 
                     onClick={() => handleStartPOS(store.id)}

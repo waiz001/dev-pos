@@ -81,7 +81,7 @@ const SettingForm: React.FC<SettingFormProps> = ({
                   onValueChange={field.onChange}
                   defaultValue={field.value === "true" ? "true" : "false"}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a value" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,7 +137,7 @@ const SettingForm: React.FC<SettingFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 w-full max-w-xl mx-auto">
         <FormField
           control={form.control}
           name="name"
@@ -160,7 +160,7 @@ const SettingForm: React.FC<SettingFormProps> = ({
               <FormLabel>Category</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                 </FormControl>
@@ -198,7 +198,7 @@ const SettingForm: React.FC<SettingFormProps> = ({
           )}
         />
 
-        <Button type="submit">{buttonText}</Button>
+        <Button type="submit" className="w-full sm:w-auto">{buttonText}</Button>
       </form>
     </Form>
   );
