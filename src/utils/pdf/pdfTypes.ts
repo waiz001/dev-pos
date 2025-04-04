@@ -13,17 +13,28 @@ declare module "jspdf" {
   }
 }
 
-// Type for receipt PDF generation
+// Flexible receipt data type that works with both direct Order objects 
+// and the structured format with order property
 export interface ReceiptData {
-  storeName: string;
-  order: Order;
+  storeName?: string;
+  order?: Order;
+  id?: string;
+  date?: Date;
+  items?: Array<any>;
+  total?: number;
+  tax?: number;
+  customerId?: string;
+  customerName?: string;
+  paymentMethod?: string;
+  notes?: string;
+  status?: "completed" | "pending" | "cancelled" | "in-progress";
+  storeId?: string;
+  isMerchantCopy?: boolean;
   customer?: {
     name: string;
     [key: string]: any;
   };
   taxRate?: number;
-  notes?: string;
-  isMerchantCopy?: boolean;
 }
 
 // Type for sales report PDF generation

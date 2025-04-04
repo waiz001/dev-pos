@@ -44,7 +44,7 @@ export const generateSalesReportPdf = (data: SalesReportData): jsPDF => {
     doc.text("Payment Methods", 14, 78);
     
     const paymentData = Object.entries(totals.paymentMethods).map(([method, amount]) => {
-      return [method, `$${amount.toFixed(2)}`];
+      return [method, `$${(amount as number).toFixed(2)}`];
     });
 
     // Use autoTable with configuration object syntax

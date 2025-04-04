@@ -3,9 +3,26 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Order } from '@/utils/data';
 import { ReceiptData } from './pdfTypes';
+import { stores } from '@/utils/data';
 
 export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
-  const { storeName, order, customer, taxRate, notes, isMerchantCopy } = data;
+  // Initialize variables from either format
+  const order = data.order || data;
+  const items = order.items || data.items || [];
+  const total = order.total || data.total || 0;
+  const tax = order.tax || data.tax || 0;
+  const date = order.date || data.date || new Date();
+  const paymentMethod = order.paymentMethod || data.paymentMethod || 'cash';
+  const customerName = order.customerName || data.customerName || 'Guest';
+  const notes = order.notes || data.notes || '';
+  const id = order.id || data.id || 'preview';
+  const storeId = order.storeId || data.storeId || '';
+  const isMerchantCopy = data.isMerchantCopy || false;
+  
+  // Find store name from storeId
+  const storeName = data.storeName || 
+    (storeId ? stores.find(s => s.id === storeId)?.name || 'Store' : 'Store');
+    
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -35,15 +52,15 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
 
   // Date and Order information
   yPos += lineHeight;
-  doc.text(`Date: ${new Date(order.date).toLocaleString()}`, 10, yPos);
+  doc.text(`Date: ${new Date(date).toLocaleString()}`, 10, yPos);
   
   yPos += lineHeight - 2;
-  doc.text(`Order: #${order.id.substring(0, 8)}`, 10, yPos);
+  doc.text(`Order: #${typeof id === 'string' ? id.substring(0, 8) : id}`, 10, yPos);
 
   // Customer information if available
-  if (customer) {
+  if (customerName && customerName !== 'Guest') {
     yPos += lineHeight;
-    doc.text(`Customer: ${customer.name}`, 10, yPos);
+    doc.text(`Customer: ${customerName}`, 10, yPos);
   }
 
   // Line separator
@@ -55,15 +72,13 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   yPos += 2;
   
   // Calculate subtotal, tax, and final total
-  const subtotal = order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const tax = taxRate ? subtotal * (taxRate / 100) : 0;
-  const total = subtotal + tax;
+  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   // Use autoTable with configuration object syntax
   doc.autoTable({
     startY: yPos,
     head: [['Item', 'Qty', 'Price', 'Total']],
-    body: order.items.map(item => [
+    body: items.map(item => [
       item.name,
       item.quantity.toString(),
       `$${item.price.toFixed(2)}`,
@@ -95,11 +110,9 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   doc.text('Subtotal:', 40, yPos);
   doc.text(`$${subtotal.toFixed(2)}`, 70, yPos, { align: 'right' });
   
-  if (taxRate) {
-    yPos += lineHeight - 3;
-    doc.text(`Tax (${taxRate}%):`, 40, yPos);
-    doc.text(`$${tax.toFixed(2)}`, 70, yPos, { align: 'right' });
-  }
+  yPos += lineHeight - 3;
+  doc.text(`Tax:`, 40, yPos);
+  doc.text(`$${tax.toFixed(2)}`, 70, yPos, { align: 'right' });
   
   yPos += lineHeight - 3;
   doc.setFont('helvetica', 'bold');
@@ -109,7 +122,7 @@ export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
   // Payment method
   yPos += lineHeight;
   doc.setFont('helvetica', 'normal');
-  doc.text(`Payment Method: ${order.paymentMethod}`, 10, yPos);
+  doc.text(`Payment Method: ${paymentMethod}`, 10, yPos);
   
   // Notes if available
   if (notes) {
