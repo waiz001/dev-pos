@@ -68,7 +68,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
       barcode: initialData.barcode || "",
       image: initialData.image || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&h=200&auto=format&fit=crop",
       description: initialData.description || "",
-      storeId: initialData.storeId || "",
+      storeId: initialData.storeId || "all", // Changed from empty string to "all"
     },
   });
 
@@ -180,14 +180,17 @@ const ProductForm: React.FC<ProductFormProps> = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>POS Store (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Available in all stores" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">All Stores</SelectItem>
+                  <SelectItem value="all">All Stores</SelectItem>
                   {stores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}

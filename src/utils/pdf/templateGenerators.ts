@@ -1,4 +1,3 @@
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Product, categories, stores } from '@/utils/data';
@@ -46,12 +45,19 @@ export const generateProductCatalogPdf = (products: Product[]): jsPDF => {
   
   // Use autoTable with configuration object syntax
   doc.autoTable({
-    startY: 35,
     head: [tableHeaders],
     body: tableData,
+    startY: 30,
     theme: 'grid',
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [41, 128, 185] },
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [41, 128, 185],
+      textColor: 255,
+      fontStyle: 'bold',
+    },
     alternateRowStyles: { fillColor: [245, 245, 245] }
   });
   

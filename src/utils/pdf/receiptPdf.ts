@@ -1,144 +1,90 @@
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { ReceiptData } from "@/utils/pdf/pdfTypes";
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Order } from '@/utils/data';
-import { ReceiptData } from './pdfTypes';
-import { stores } from '@/utils/data';
+// Function to generate a receipt PDF
+export const generateReceiptPdf = (receiptData: ReceiptData): jsPDF => {
+  const doc = new jsPDF();
 
-export const generateReceiptPdf = (data: ReceiptData): jsPDF => {
-  // Initialize variables from either format
-  const order = data.order || data;
-  const items = order.items || data.items || [];
-  const total = order.total || data.total || 0;
-  const tax = order.tax || data.tax || 0;
-  const date = order.date || data.date || new Date();
-  const paymentMethod = order.paymentMethod || data.paymentMethod || 'cash';
-  const customerName = order.customerName || data.customerName || 'Guest';
-  const notes = order.notes || data.notes || '';
-  const id = order.id || data.id || 'preview';
-  const storeId = order.storeId || data.storeId || '';
-  const isMerchantCopy = data.isMerchantCopy || false;
-  
-  // Find store name from storeId
-  const storeName = data.storeName || 
-    (storeId ? stores.find(s => s.id === storeId)?.name || 'Store' : 'Store');
-    
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: [80, 200] // Receipt-like size
+  // Default values and safe access
+  const storeName = receiptData.storeName || "Your Store";
+  const order = receiptData.order || receiptData; // Use the direct data if 'order' is not present
+  const id = order.id || receiptData.id || "N/A";
+  const date = order.date || receiptData.date || new Date();
+  const items = order.items || receiptData.items || [];
+  const total = order.total || receiptData.total || 0;
+  const tax = order.tax || receiptData.tax || 0;
+  const customerName = order.customerName || receiptData.customerName || "Guest";
+  const paymentMethod = order.paymentMethod || receiptData.paymentMethod || "Cash";
+  const notes = order.notes || receiptData.notes || "";
+  const isMerchantCopy = receiptData.isMerchantCopy || false;
+
+  // Set document properties
+  doc.setProperties({
+    title: `Receipt - ${id}`,
+    subject: `Order Receipt for ${customerName}`,
+    author: storeName,
+    keywords: 'receipt, order, purchase',
   });
 
-  const lineHeight = 8;
-  let yPos = 10;
-
-  // Store information (header)
+  // Add store name and receipt title
+  doc.setFontSize(18);
+  doc.text(storeName, 14, 20);
   doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text(storeName, 40, yPos, { align: 'center' });
-  
-  // Add merchant copy watermark if needed
-  if (isMerchantCopy) {
-    doc.setFontSize(10);
-    doc.setTextColor(180, 180, 180);
-    doc.text("MERCHANT COPY", 40, yPos + 20, { align: 'center' });
-    doc.setTextColor(0, 0, 0);
-  }
-  
-  yPos += lineHeight;
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'normal');
-  doc.text('RECEIPT', 40, yPos, { align: 'center' });
+  doc.text(`Receipt ${isMerchantCopy ? "(Merchant Copy)" : ""}`, 14, 28);
 
-  // Date and Order information
-  yPos += lineHeight;
-  doc.text(`Date: ${new Date(date).toLocaleString()}`, 10, yPos);
-  
-  yPos += lineHeight - 2;
-  doc.text(`Order: #${typeof id === 'string' ? id.substring(0, 8) : id}`, 10, yPos);
+  // Add order information
+  doc.setFontSize(10);
+  doc.text(`Receipt ID: ${id}`, 14, 36);
+  doc.text(`Date: ${date.toLocaleDateString()}`, 14, 42);
+  doc.text(`Customer: ${customerName}`, 14, 48);
+  doc.text(`Payment Method: ${paymentMethod}`, 14, 54);
 
-  // Customer information if available
-  if (customerName && customerName !== 'Guest') {
-    yPos += lineHeight;
-    doc.text(`Customer: ${customerName}`, 10, yPos);
-  }
+  let currentY = 62;
 
-  // Line separator
-  yPos += lineHeight;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(10, yPos, 70, yPos);
+  // Prepare table rows
+  const tableRows = items.map((item) => [
+    item.name,
+    item.quantity,
+    `$${item.price.toFixed(2)}`,
+    `$${(item.price * item.quantity).toFixed(2)}`,
+  ]);
 
-  // Items table
-  yPos += 2;
-  
-  // Calculate subtotal, tax, and final total
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  // Use autoTable with configuration object syntax
+  // Add line items table
   doc.autoTable({
-    startY: yPos,
     head: [['Item', 'Qty', 'Price', 'Total']],
-    body: items.map(item => [
-      item.name,
-      item.quantity.toString(),
-      `$${item.price.toFixed(2)}`,
-      `$${(item.price * item.quantity).toFixed(2)}`
-    ]),
+    body: tableRows,
+    startY: currentY,
     theme: 'plain',
     styles: {
       fontSize: 8,
-      cellPadding: 1,
-    },
-    columnStyles: {
-      0: { cellWidth: 25 },
-      1: { cellWidth: 10, halign: 'center' },
-      2: { cellWidth: 15, halign: 'right' },
-      3: { cellWidth: 15, halign: 'right' },
+      cellPadding: 2,
     },
     headStyles: {
-      fillColor: [255, 255, 255],
+      fillColor: [240, 240, 240],
       textColor: [0, 0, 0],
       fontStyle: 'bold',
     },
-    margin: { left: 10, right: 10 },
   });
 
-  // Get the Y position after the table
-  yPos = (doc as any).lastAutoTable.finalY + 5;
+  currentY = (doc as any).lastAutoTable.finalY + 10;
 
-  // Totals section
-  doc.text('Subtotal:', 40, yPos);
-  doc.text(`$${subtotal.toFixed(2)}`, 70, yPos, { align: 'right' });
-  
-  yPos += lineHeight - 3;
-  doc.text(`Tax:`, 40, yPos);
-  doc.text(`$${tax.toFixed(2)}`, 70, yPos, { align: 'right' });
-  
-  yPos += lineHeight - 3;
-  doc.setFont('helvetica', 'bold');
-  doc.text('TOTAL:', 40, yPos);
-  doc.text(`$${total.toFixed(2)}`, 70, yPos, { align: 'right' });
-  
-  // Payment method
-  yPos += lineHeight;
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Payment Method: ${paymentMethod}`, 10, yPos);
-  
-  // Notes if available
+  // Add totals
+  doc.setFontSize(12);
+  doc.text(`Subtotal: $${(total - tax).toFixed(2)}`, 14, currentY);
+  doc.text(`Tax: $${tax.toFixed(2)}`, 14, currentY + 6);
+  doc.setFontSize(14);
+  doc.text(`Total: $${total.toFixed(2)}`, 14, currentY + 12);
+
+  // Add notes
   if (notes) {
-    yPos += lineHeight;
-    doc.text('Notes:', 10, yPos);
-    yPos += lineHeight - 3;
-    doc.text(notes, 10, yPos);
+    doc.setFontSize(10);
+    doc.text(`Notes: ${notes}`, 14, currentY + 20);
   }
-  
-  // Footer
-  yPos += lineHeight * 2;
-  doc.setFontSize(8);
-  doc.text('Thank you for your purchase!', 40, yPos, { align: 'center' });
-  
+
+  // Add footer
+  doc.setFontSize(9);
+  doc.text('Thank you for your purchase!', 14, doc.internal.pageSize.height - 10);
+
   return doc;
 };
-
-// Alias for backward compatibility
-export const generateOrderReceiptPDF = generateReceiptPdf;

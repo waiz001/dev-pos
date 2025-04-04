@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -29,14 +28,20 @@ const ProductFormWrapper = ({ initialData, onSuccess }) => {
       console.log("ProductFormWrapper onSubmit - initialData:", initialData);
       console.log("ProductFormWrapper onSubmit - formData:", formData);
       
+      // Convert "all" back to empty string for storeId if needed
+      const processedData = {
+        ...formData,
+        storeId: formData.storeId === "all" ? "" : formData.storeId
+      };
+      
       if (initialData && initialData.id) {
         // Update existing product
-        const updatedProduct = updateProductData(initialData.id, formData);
+        const updatedProduct = updateProductData(initialData.id, processedData);
         console.log("Updated product:", updatedProduct);
         toast.success("Product updated successfully");
       } else {
         // Add new product
-        const newProduct = addProductData(formData);
+        const newProduct = addProductData(processedData);
         console.log("New product:", newProduct);
         toast.success("Product added successfully");
       }
@@ -53,7 +58,13 @@ const ProductFormWrapper = ({ initialData, onSuccess }) => {
     }
   };
 
-  return <ProductForm initialData={initialData} onSubmit={onSubmit} buttonText={initialData?.id ? "Update Product" : "Add Product"} />;
+  // Pre-process initialData to convert empty storeId to "all"
+  const processedInitialData = initialData ? {
+    ...initialData,
+    storeId: initialData.storeId === "" ? "all" : initialData.storeId
+  } : {};
+
+  return <ProductForm initialData={processedInitialData} onSubmit={onSubmit} buttonText={initialData?.id ? "Update Product" : "Add Product"} />;
 };
 
 const Products = () => {

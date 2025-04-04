@@ -1,181 +1,181 @@
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { SalesReportData, Order } from "@/utils/data";
 
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { Order, PaymentMethod } from '@/utils/data';
-import { SalesReportData } from './pdfTypes';
-
-export const generateSalesReportPdf = (data: SalesReportData): jsPDF => {
-  const { title, orders, startDate, endDate, totals } = data;
-  const doc = new jsPDF();
-
-  // Add the title
-  doc.setFontSize(18);
-  doc.text(title, 14, 22);
-
-  // Add the date range if provided
-  doc.setFontSize(12);
-  if (startDate && endDate) {
-    doc.text(`Period: ${startDate} - ${endDate}`, 14, 32);
-  }
-
-  // Add the sales summary section
-  doc.setFontSize(14);
-  doc.text("Sales Summary", 14, 42);
-
-  const summaryData = [
-    ["Total Sales", `$${totals.totalSales.toFixed(2)}`],
-    ["Total Orders", totals.totalOrders.toString()],
-    ["Average Order Value", `$${totals.averageOrderValue.toFixed(2)}`]
-  ];
-
-  // Use autoTable with configuration object syntax
-  doc.autoTable({
-    startY: 46,
-    head: [['Metric', 'Value']],
-    body: summaryData,
-    theme: 'grid',
-    styles: { fontSize: 10 },
-    headStyles: { fillColor: [41, 128, 185] },
-    margin: { top: 15 }
-  });
-
-  // Add payment method breakdown if available
-  if (totals.paymentMethods && Object.keys(totals.paymentMethods).length > 0) {
-    doc.text("Payment Methods", 14, 78);
-    
-    const paymentData = Object.entries(totals.paymentMethods).map(([method, amount]) => {
-      return [method, `$${(amount as number).toFixed(2)}`];
-    });
-
-    // Use autoTable with configuration object syntax
-    doc.autoTable({
-      startY: 82,
-      head: [['Payment Method', 'Amount']],
-      body: paymentData,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] },
-      margin: { top: 15 }
-    });
-  }
-
-  // Create the orders table
-  doc.addPage();
-  doc.setFontSize(14);
-  doc.text("Order Details", 14, 20);
-
-  // Prepare table data
-  const tableHeaders = [
-    "Order ID", 
-    "Date", 
-    "Customer", 
-    "Items", 
-    "Payment Method", 
-    "Total"
-  ];
-
-  const tableData = orders.map((order) => [
-    order.id.substring(0, 8),
-    new Date(order.date).toLocaleDateString(),
-    order.customerName || "Guest",
-    order.items.length.toString(),
-    order.paymentMethod,
-    `$${order.total.toFixed(2)}`
-  ]);
-
-  // Use autoTable with configuration object syntax
-  doc.autoTable({
-    startY: 25,
-    head: [tableHeaders],
-    body: tableData,
-    theme: 'grid',
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [41, 128, 185] },
-    columnStyles: {
-      0: { cellWidth: 25 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 15 },
-      4: { cellWidth: 30 },
-      5: { cellWidth: 25 }
-    }
-  });
-
-  // Add a section for top selling products if available
-  if (totals.topProducts && totals.topProducts.length > 0) {
-    const currentY = (doc as any).lastAutoTable.finalY + 15;
-    doc.setFontSize(14);
-    doc.text("Top Selling Products", 14, currentY);
-
-    const topProductsData = totals.topProducts.map((product, index) => [
-      (index + 1).toString(),
-      product.name,
-      product.quantity.toString(),
-      `$${product.total.toFixed(2)}`
-    ]);
-
-    // Use autoTable with configuration object syntax
-    doc.autoTable({
-      startY: currentY + 5,
-      head: [["#", "Product", "Quantity", "Revenue"]],
-      body: topProductsData,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [41, 128, 185] }
-    });
-  }
-
-  return doc;
-};
-
-// Alias for backward compatibility
+// Function to generate a daily sales report PDF
 export const generateDailySalesReportPDF = (orders: Order[]): jsPDF => {
+  const doc = new jsPDF();
+  const title = "Daily Sales Report";
+  const date = new Date().toLocaleDateString();
+  let currentY = 20;
+
+  // Set document information
+  doc.setProperties({
+    title: title,
+    subject: "Daily Sales Report",
+    author: "Your Company",
+    keywords: "sales, report, daily",
+  });
+
+  // Add title
+  doc.setFontSize(18);
+  doc.text(title, 14, currentY);
+
+  // Add date
+  doc.setFontSize(12);
+  currentY += 10;
+  doc.text(`Date: ${date}`, 14, currentY);
+
   // Calculate totals
   const totalSales = orders.reduce((sum, order) => sum + order.total, 0);
   const totalOrders = orders.length;
-  const averageOrderValue = totalSales / totalOrders || 0;
-  
-  // Count payment methods
+  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+  // Add summary
+  doc.setFontSize(12);
+  currentY += 10;
+  doc.text(`Summary:`, 14, currentY);
+
+  doc.setFontSize(10);
+  currentY += 6;
+  doc.text(`Total Sales: $${totalSales.toFixed(2)}`, 20, currentY);
+
+  currentY += 6;
+  doc.text(`Total Orders: ${totalOrders}`, 20, currentY);
+
+  currentY += 6;
+  doc.text(`Average Order Value: $${averageOrderValue.toFixed(2)}`, 20, currentY);
+
+  // Payment method breakdown
   const paymentMethods: Record<string, number> = {};
-  orders.forEach(order => {
-    const method = order.paymentMethod;
-    if (method) {
-      paymentMethods[method] = (paymentMethods[method] || 0) + order.total;
-    }
+  orders.forEach((order) => {
+    paymentMethods[order.paymentMethod] =
+      (paymentMethods[order.paymentMethod] || 0) + order.total;
   });
-  
-  // Get top products
-  const productSales: Record<string, { name: string, quantity: number, total: number }> = {};
-  orders.forEach(order => {
-    order.items.forEach(item => {
-      if (!productSales[item.id]) {
-        productSales[item.id] = {
-          name: item.name,
-          quantity: 0,
-          total: 0
-        };
+
+  const paymentMethodsRows = Object.entries(paymentMethods).map(
+    ([method, amount]) => [method, `$${amount.toFixed(2)}`]
+  );
+
+  doc.setFontSize(12);
+  currentY += 10;
+  doc.text(`Payment Methods:`, 14, currentY);
+
+  doc.autoTable({
+    head: [['Payment Method', 'Amount']],
+    body: paymentMethodsRows,
+    startY: currentY + 5,
+    theme: 'plain',
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+    },
+  });
+
+  currentY = doc.lastAutoTable.finalY || currentY;
+
+  // Top products sold
+  const productQuantities: Record<string, { quantity: number; total: number }> =
+    {};
+  orders.forEach((order) => {
+    order.items.forEach((item) => {
+      if (!productQuantities[item.name]) {
+        productQuantities[item.name] = { quantity: 0, total: 0 };
       }
-      productSales[item.id].quantity += item.quantity;
-      productSales[item.id].total += item.price * item.quantity;
+      productQuantities[item.name].quantity += item.quantity;
+      productQuantities[item.name].total += item.price * item.quantity;
     });
   });
-  
-  const topProducts = Object.values(productSales)
-    .sort((a, b) => b.total - a.total)
+
+  const topProducts = Object.entries(productQuantities)
+    .sort(([, a], [, b]) => b.quantity - a.quantity)
     .slice(0, 5);
-  
-  // Generate the report
-  return generateSalesReportPdf({
-    title: "Daily Sales Report",
-    orders: orders,
-    startDate: new Date().toLocaleDateString(),
-    endDate: new Date().toLocaleDateString(),
-    totals: {
-      totalSales,
-      totalOrders,
-      averageOrderValue,
-      paymentMethods,
-      topProducts
-    }
+
+  const topProductsRows = topProducts.map(
+    ([name, { quantity, total }], index) => [
+      index + 1,
+      name,
+      quantity,
+      `$${total.toFixed(2)}`,
+    ]
+  );
+
+  doc.setFontSize(12);
+  currentY += 10;
+  doc.text(`Top Products Sold:`, 14, currentY);
+
+  doc.autoTable({
+    head: [['#', 'Product', 'Qty Sold', 'Revenue']],
+    body: topProductsRows,
+    startY: currentY + 5,
+    theme: 'plain',
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+    },
   });
+
+  // Add order details table
+  doc.addPage();
+  currentY = 20;
+  doc.setFontSize(14);
+  doc.text(`Order Details:`, 14, currentY);
+
+  const tableRows = orders.flatMap((order, index) => {
+    const orderRows = order.items.map((item) => [
+      item.name,
+      item.price,
+      item.quantity,
+      `$${(item.price * item.quantity).toFixed(2)}`,
+    ]);
+
+    orderRows.push([
+      "",
+      "",
+      "Subtotal:",
+      `$${order.total.toFixed(2)}`,
+    ]);
+    orderRows.push([
+      "",
+      "",
+      "Tax:",
+      `$${order.tax.toFixed(2)}`,
+    ]);
+    orderRows.push([
+      "",
+      "",
+      "Total:",
+      `$${(order.total + order.tax).toFixed(2)}`,
+    ]);
+
+    return [[`Order #${index + 1} - ${order.customerName}`]].concat(orderRows);
+  });
+
+  doc.autoTable({
+    head: [['#', 'Item', 'Price', 'Quantity', 'Total']],
+    body: [],
+    startY: currentY + 10,
+    theme: 'plain',
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+    },
+  });
+  
+  return doc;
 };
