@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { orders, Order, Customer } from "@/utils/data";
 import { format } from "date-fns";
+import { CreditCard, DollarSign } from "lucide-react";
 
 interface CustomerBalanceProps {
   customer: Customer;
@@ -35,14 +36,37 @@ const CustomerBalance: React.FC<CustomerBalanceProps> = ({ customer, onSuccess }
     0
   );
 
+  // Current balance calculation
+  const currentBalance = customer.totalSpent || 0;
+
   return (
     <div className="mt-4">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Pending Payments</h3>
-        <Badge variant="outline" className="text-lg">
-          Total: ${totalPendingAmount.toFixed(2)}
-        </Badge>
+      <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <div>
+          <h3 className="text-lg font-semibold">Customer Account</h3>
+          <p className="text-sm text-muted-foreground">Current balance and pending payments</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="outline" className="text-base p-2 flex items-center">
+            <DollarSign className="h-4 w-4 mr-1" />
+            Current Balance: ${currentBalance.toFixed(2)}
+          </Badge>
+          <Badge variant="outline" className="text-base p-2 flex items-center">
+            <CreditCard className="h-4 w-4 mr-1" />
+            Pending: ${totalPendingAmount.toFixed(2)}
+          </Badge>
+        </div>
       </div>
+
+      <div className="mb-6 p-4 bg-muted rounded-lg">
+        <h4 className="font-medium mb-2">Payment History</h4>
+        <div className="flex justify-between">
+          <span>Total Credit Balance:</span>
+          <span className="font-bold">${currentBalance.toFixed(2)}</span>
+        </div>
+      </div>
+
+      <h4 className="text-lg font-semibold mb-4">Pending Payments</h4>
 
       {pendingOrders.length === 0 ? (
         <Card>
@@ -76,7 +100,7 @@ const PendingOrderCard: React.FC<PendingOrderCardProps> = ({ order }) => {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle>Order #{order.id.split("-")[1]}</CardTitle>
+          <CardTitle>Order #{order.id.slice(-5)}</CardTitle>
           <Badge>{order.status}</Badge>
         </div>
         <CardDescription>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -19,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores } from "@/utils/data";
+import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores, updateCustomer } from "@/utils/data";
 import { toast } from "sonner";
 import { RotateCcw, ListOrdered } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
@@ -132,6 +131,17 @@ const POSSession = () => {
     };
     
     try {
+      if (selectedPaymentMethod === "credit-card" && selectedCustomer) {
+        const currentBalance = selectedCustomer.totalSpent || 0;
+        const newBalance = currentBalance + calculateTotal();
+        
+        updateCustomer(selectedCustomer.id, {
+          totalSpent: newBalance
+        });
+        
+        window.dispatchEvent(new CustomEvent('customer-updated'));
+      }
+      
       if (currentOrderId) {
         const updatedOrder = updateOrder(currentOrderId, {
           ...orderData,
@@ -231,6 +241,11 @@ const POSSession = () => {
     ? stores.find(store => store.id === currentStoreId)?.name || "Unknown Store"
     : "All Stores";
 
+  const selectedCustomer = selectedCustomerId !== "guest" 
+    ? customers.find(c => c.id === selectedCustomerId) 
+    : null;
+  const customerBalance = selectedCustomer?.totalSpent || 0;
+
   return (
     <MainLayout>
       <div className="p-6">
@@ -305,7 +320,7 @@ const POSSession = () => {
                         <SelectItem value="guest">Walk-in Customer</SelectItem>
                         {Array.isArray(customers) && customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name}
+                            {customer.name} {customer.totalSpent > 0 ? `(Balance: $${customer.totalSpent.toFixed(2)})` : ''}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -329,6 +344,17 @@ const POSSession = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {selectedCustomer && selectedPaymentMethod === "credit-card" && (
+                    <div className="p-3 bg-muted rounded-md">
+                      <p className="text-sm font-medium">Customer Current Balance: ${customerBalance.toFixed(2)}</p>
+                      {calculateTotal() > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                          New balance after this order: ${(customerBalance + calculateTotal()).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex-1 overflow-auto">

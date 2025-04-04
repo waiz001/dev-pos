@@ -54,12 +54,17 @@ const RecoveryForm = ({ onSuccess }) => {
         return;
       }
       
-      // Calculate new balance (balance is represented as totalSpent in the data structure)
-      // We just need to reduce the totalSpent directly as totalSpent represents the balance
+      // Check if recovery amount is greater than balance
       const currentTotalSpent = customer.totalSpent || 0;
-      const updatedTotalSpent = currentTotalSpent - data.amount;
+      if (data.amount > currentTotalSpent) {
+        toast.error(`Recovery amount cannot exceed current balance of $${currentTotalSpent.toFixed(2)}`);
+        setIsSubmitting(false);
+        return;
+      }
       
       // Update customer with new totalSpent (reducing the balance)
+      const updatedTotalSpent = currentTotalSpent - data.amount;
+      
       const updatedCustomer = updateCustomer(customer.id, {
         totalSpent: updatedTotalSpent >= 0 ? updatedTotalSpent : 0,
       });
@@ -67,8 +72,8 @@ const RecoveryForm = ({ onSuccess }) => {
       if (updatedCustomer) {
         toast.success(`Successfully recovered $${data.amount} from ${customer.name}`);
         
-        // Create a record in orders or a dedicated recoveries collection if needed
-        // This could be implemented if needed
+        // Dispatch event to notify other components about the customer update
+        window.dispatchEvent(new CustomEvent('customer-updated'));
         
         if (onSuccess) {
           onSuccess();

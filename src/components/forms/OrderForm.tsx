@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Order, Customer, CartItem, products, customers, paymentMethods } from "@/utils/data";
+import { Order, Customer, CartItem, products, customers, paymentMethods, updateCustomer } from "@/utils/data";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -120,11 +120,28 @@ const OrderForm: React.FC<OrderFormProps> = ({
     }
 
     const selectedCustomer = customers.find(c => c.id === values.customerId);
+    const total = calculateTotal();
+
+    // Update customer balance if using credit payment method
+    if (values.paymentMethod === "credit-card" && selectedCustomer) {
+      // Add to customer's balance (totalSpent)
+      const currentBalance = selectedCustomer.totalSpent || 0;
+      const newBalance = currentBalance + total;
+      
+      updateCustomer(selectedCustomer.id, {
+        totalSpent: newBalance
+      });
+      
+      // Dispatch the custom event to notify other components about the customer update
+      window.dispatchEvent(new CustomEvent('customer-updated'));
+      
+      toast.success(`Added $${total.toFixed(2)} to ${selectedCustomer.name}'s balance`);
+    }
 
     onSubmit({
       ...values,
       items: cart,
-      total: calculateTotal(),
+      total: total,
       customerName: selectedCustomer?.name || values.customerName || "Guest",
     });
     
@@ -141,6 +158,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
     toast.success("Order saved successfully");
   };
 
+  // Watch the customerId and paymentMethod for conditional rendering
+  const watchedCustomerId = form.watch("customerId");
+  const watchedPaymentMethod = form.watch("paymentMethod");
+  const selectedCustomer = customers.find(c => c.id === watchedCustomerId);
+  const isCreditPayment = watchedPaymentMethod === "credit-card";
+  const currentBalance = selectedCustomer?.totalSpent || 0;
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -150,7 +174,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
             name="customerId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Customer (Optional)</FormLabel>
+                <FormLabel>Customer</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -161,7 +185,7 @@ const OrderForm: React.FC<OrderFormProps> = ({
                     <SelectItem value="guest">Walk-in Customer</SelectItem>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
+                        {customer.name} {customer.totalSpent > 0 ? `(Balance: $${customer.totalSpent.toFixed(2)})` : ''}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -196,6 +220,13 @@ const OrderForm: React.FC<OrderFormProps> = ({
             )}
           />
         </div>
+
+        {selectedCustomer && isCreditPayment && (
+          <div className="p-3 bg-muted rounded-md">
+            <p className="text-sm font-medium">Customer Current Balance: ${currentBalance.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">New balance after this order: ${(currentBalance + calculateTotal()).toFixed(2)}</p>
+          </div>
+        )}
 
         <div className="space-y-4">
           <div className="rounded-md border">
