@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Check, CreditCard, DollarSign, X } from "lucide-react";
+import { Check, CreditCard, DollarSign, X, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { CartItem, paymentMethods } from "@/utils/data";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface CheckoutProps {
   isOpen: boolean;
@@ -34,12 +36,61 @@ const Checkout: React.FC<CheckoutProps> = ({
   const tax = subtotal * 0.1; // 10% tax
   const total = subtotal + tax;
 
+  const generateReceipt = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleString();
+    
+    // Add receipt header
+    doc.setFontSize(20);
+    doc.text("Sales Receipt", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`Date: ${currentDate}`, 20, 30);
+    doc.text(`Payment Method: ${paymentMethods.find(p => p.id === selectedPayment)?.name || selectedPayment}`, 20, 35);
+    doc.text(`Receipt #: ${Math.floor(Math.random() * 10000)}`, 20, 40);
+    
+    // Create table with items
+    const tableColumn = ["Item", "Price", "Qty", "Total"];
+    const tableRows = items.map(item => [
+      item.name,
+      `$${item.price.toFixed(2)}`,
+      item.quantity,
+      `$${(item.price * item.quantity).toFixed(2)}`
+    ]);
+    
+    // Add the table to the PDF
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 66, 66] },
+    });
+    
+    // Calculate the height of the table we just added
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    
+    // Add totals
+    doc.text(`Subtotal: $${subtotal.toFixed(2)}`, 150, finalY + 10, { align: "right" });
+    doc.text(`Tax (10%): $${tax.toFixed(2)}`, 150, finalY + 15, { align: "right" });
+    doc.text(`Total: $${total.toFixed(2)}`, 150, finalY + 25, { align: "right" });
+    
+    // Add footer
+    doc.text("Thank you for your purchase!", 105, finalY + 40, { align: "center" });
+    
+    // Save the PDF
+    doc.save("receipt.pdf");
+  };
+
   const handleConfirm = () => {
     setIsProcessing(true);
     // Simulate payment processing
     setTimeout(() => {
       setIsProcessing(false);
       try {
+        // Generate and download receipt
+        generateReceipt();
+        
         // Call onConfirm to clear the cart and start a new order
         onConfirm();
         
