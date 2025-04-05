@@ -49,8 +49,8 @@ const Login = () => {
           <CardTitle className="text-2xl text-center">POS System Login</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
+          <form onSubmit={handleLogin} className="space-y-6 px-1 py-2">
+            <div className="space-y-3">
               <Label htmlFor="username">Username</Label>
               <Input 
                 id="username" 
@@ -60,9 +60,10 @@ const Login = () => {
                 placeholder="Enter your username"
                 autoComplete="username"
                 required
+                className="py-6"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="password">Password</Label>
               <Input 
                 id="password" 
@@ -72,18 +73,19 @@ const Login = () => {
                 placeholder="Enter your password"
                 autoComplete="current-password"
                 required
+                className="py-6"
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full py-6" 
               disabled={isLoading}
               data-testid="login-button"
             >
               {isLoading ? "Logging in..." : "Login"}
             </Button>
             
-            <div className="mt-4 text-center text-sm text-muted-foreground">
+            <div className="mt-6 text-center text-sm text-muted-foreground">
               <p>Demo accounts:</p>
               <p>Username: admin</p>
               <p>Username: cashier</p>

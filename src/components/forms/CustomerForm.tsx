@@ -62,12 +62,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 w-full px-1">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 w-full px-2 py-2">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="mb-4">
               <FormLabel>Name</FormLabel>
               <FormControl>
                 <Input placeholder="Customer name" {...field} />
@@ -81,7 +81,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="mb-4">
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="customer@example.com" {...field} />
@@ -91,12 +91,12 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="phone"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="mb-4">
                 <FormLabel>Phone (Optional)</FormLabel>
                 <FormControl>
                   <Input placeholder="555-123-4567" {...field} />
@@ -111,7 +111,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           control={form.control}
           name="address"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="mb-4">
               <FormLabel>Address (Optional)</FormLabel>
               <FormControl>
                 <Input placeholder="123 Main St, Anytown, USA" {...field} />
@@ -125,7 +125,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           control={form.control}
           name="notes"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="mb-4">
               <FormLabel>Notes (Optional)</FormLabel>
               <FormControl>
                 <Textarea rows={3} placeholder="Any additional information" {...field} />
@@ -137,7 +137,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
 
         <Button 
           type="submit" 
-          className="w-full sm:w-auto mt-4"
+          className="w-full sm:w-auto mt-6"
         >
           {buttonText}
         </Button>
