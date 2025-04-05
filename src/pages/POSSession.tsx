@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -18,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores, updateCustomer } from "@/utils/data";
 import { toast } from "sonner";
 import { RotateCcw, ListOrdered } from "lucide-react";

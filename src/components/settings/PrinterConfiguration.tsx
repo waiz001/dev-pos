@@ -150,7 +150,11 @@ const PrinterConfiguration: React.FC = () => {
       // Adding a new printer
       const newPrinter: PrinterDevice = {
         id: `printer-${Date.now()}`,
-        ...values,
+        name: values.name,
+        type: values.type,
+        ipAddress: values.ipAddress,
+        port: values.port,
+        isDefault: values.isDefault,
       };
       
       let updatedPrinters = [...printers, newPrinter];

@@ -51,7 +51,7 @@ const loadShops = (): Shop[] => {
       id: store.id,
       name: store.name,
       address: store.address || '',
-      contactNumber: store.contactNumber || '',
+      contactNumber: store.phone || '',
     }));
   } catch (error) {
     console.error('Error loading shops:', error);
@@ -59,7 +59,7 @@ const loadShops = (): Shop[] => {
       id: store.id,
       name: store.name,
       address: store.address || '',
-      contactNumber: store.contactNumber || '',
+      contactNumber: store.phone || '',
     }));
   }
 };
@@ -131,7 +131,9 @@ const ShopManagement: React.FC = () => {
       // Add new shop
       const newShop: Shop = {
         id: `shop-${Date.now()}`,
-        ...values,
+        name: values.name,
+        address: values.address,
+        contactNumber: values.contactNumber,
       };
       const updatedShops = [...shops, newShop];
       setShops(updatedShops);
