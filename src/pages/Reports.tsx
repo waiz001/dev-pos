@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { PlusCircle, Edit, Trash2, Search, Download, FileText, Calendar, BarChart } from "lucide-react";
+import { Edit, Trash2, Search, Download, FileText, BarChart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
@@ -45,11 +45,11 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import MainLayout from "@/components/layout/MainLayout";
 import { 
   reports, 
-  addReport, 
   updateReport, 
   deleteReport, 
   Report 
@@ -60,21 +60,9 @@ import { format } from "date-fns";
 const Reports = () => {
   const [reportsList, setReportsList] = useState<Report[]>(reports);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  
-  const addForm = useForm<Omit<Report, "id">>({
-    defaultValues: {
-      name: "",
-      type: "sales",
-      description: "",
-      createdAt: new Date(),
-      format: "pdf",
-      scheduled: false
-    }
-  });
   
   const editForm = useForm<Report>({
     defaultValues: selectedReport || {
@@ -115,19 +103,6 @@ const Reports = () => {
   React.useEffect(() => {
     handleSearch();
   }, [searchQuery, reports]);
-  
-  const handleAddReport = (data: Omit<Report, "id">) => {
-    try {
-      const newReport = addReport(data);
-      setReportsList([...reports]);
-      toast.success(`Report "${newReport.name}" added successfully`);
-      setIsAddDialogOpen(false);
-      addForm.reset();
-    } catch (error) {
-      toast.error("Failed to add report");
-      console.error(error);
-    }
-  };
   
   const handleEditReport = (data: Report) => {
     if (!selectedReport) return;
@@ -214,25 +189,18 @@ const Reports = () => {
   return (
     <MainLayout>
       <div className="container mx-auto py-6">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <h1 className="text-2xl font-bold">Report Management</h1>
           
-          <div className="flex items-center gap-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search reports..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Report
-            </Button>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search reports..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
         
@@ -325,147 +293,15 @@ const Reports = () => {
           </Table>
         </div>
         
-        {/* Add Report Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
-            <DialogHeader>
-              <DialogTitle>Create New Report</DialogTitle>
-            </DialogHeader>
-            
-            <form onSubmit={addForm.handleSubmit(handleAddReport)}>
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Report Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter report name" 
-                        {...addForm.register("name")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Report Type</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue="sales"
-                        onValueChange={(value) => {
-                          addForm.setValue("type", value as "sales" | "inventory" | "customers" | "custom");
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sales">Sales</SelectItem>
-                          <SelectItem value="inventory">Inventory</SelectItem>
-                          <SelectItem value="customers">Customers</SelectItem>
-                          <SelectItem value="custom">Custom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-1">
-                  <FormItem>
-                    <FormLabel>Format</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue="pdf"
-                        onValueChange={(value) => {
-                          addForm.setValue("format", value as "pdf" | "excel" | "csv");
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pdf">PDF</SelectItem>
-                          <SelectItem value="excel">Excel</SelectItem>
-                          <SelectItem value="csv">CSV</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter report description" 
-                        {...addForm.register("description")} 
-                        required 
-                      />
-                    </FormControl>
-                  </FormItem>
-                </div>
-                
-                <div className="col-span-2">
-                  <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel>Schedule Report</FormLabel>
-                      <Switch 
-                        checked={addForm.watch("scheduled")} 
-                        onCheckedChange={(checked) => {
-                          addForm.setValue("scheduled", checked);
-                        }}
-                      />
-                    </div>
-                  </FormItem>
-                </div>
-                
-                {addForm.watch("scheduled") && (
-                  <div className="col-span-2">
-                    <FormItem>
-                      <FormLabel>Frequency</FormLabel>
-                      <FormControl>
-                        <Select
-                          defaultValue="daily"
-                          onValueChange={(value) => {
-                            addForm.setValue("scheduledFrequency", value as "daily" | "weekly" | "monthly");
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select frequency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="daily">Daily</SelectItem>
-                            <SelectItem value="weekly">Weekly</SelectItem>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                    </FormItem>
-                  </div>
-                )}
-              </div>
-              
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Create Report</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-        
         {/* Edit Report Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[550px]">
+          <DialogContent className="sm:max-w-[550px] max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Edit Report</DialogTitle>
             </DialogHeader>
             
-            <form onSubmit={editForm.handleSubmit(handleEditReport)}>
-              <div className="grid grid-cols-2 gap-4 py-4">
+            <ScrollArea className="max-h-[calc(90vh-220px)] pr-4">
+              <form onSubmit={editForm.handleSubmit(handleEditReport)} className="grid grid-cols-2 gap-4 py-4">
                 <div className="col-span-2">
                   <FormItem>
                     <FormLabel>Report Name</FormLabel>
@@ -577,15 +413,15 @@ const Reports = () => {
                     </FormItem>
                   </div>
                 )}
-              </div>
-              
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Save Changes</Button>
-              </DialogFooter>
-            </form>
+              </form>
+            </ScrollArea>
+            
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button type="button" onClick={editForm.handleSubmit(handleEditReport)}>Save Changes</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
         

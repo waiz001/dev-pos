@@ -175,43 +175,6 @@ const POSSession = () => {
     }
   };
 
-  const saveOrderInProgress = () => {
-    if (cart.length === 0) {
-      toast.error("Cart is empty", {
-        position: "bottom-center"
-      });
-      return false;
-    }
-    
-    const selectedCustomer = selectedCustomerId !== "guest" 
-      ? customers.find(c => c.id === selectedCustomerId) 
-      : null;
-    
-    try {
-      const order = addOrder({
-        items: [...cart],
-        total: calculateTotal(),
-        tax: calculateTax(),
-        status: "in-progress" as "completed" | "pending" | "cancelled" | "in-progress",
-        date: new Date(),
-        customerId: selectedCustomer?.id || "",
-        customerName: selectedCustomer?.name || "Walk-in Customer",
-        paymentMethod: selectedPaymentMethod,
-      });
-      
-      toast.success("Order saved as in-progress", {
-        position: "bottom-center"
-      });
-      return true;
-    } catch (error) {
-      console.error("Error saving in-progress order:", error);
-      toast.error("Failed to save order", {
-        position: "bottom-center"
-      });
-      return false;
-    }
-  };
-
   const loadOrder = (order: Order) => {
     setCart(order.items);
     setSelectedCustomerId(order.customerId || "guest");
@@ -249,45 +212,60 @@ const POSSession = () => {
   return (
     <MainLayout>
       <div className="p-6">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">POS Session</h1>
             <p className="text-muted-foreground">Store: {currentStoreName}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             <Badge variant="outline" className="text-lg">
               Today's Sales: ${totalSales.toFixed(2)}
             </Badge>
             
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setIsRecoveryDialogOpen(true)}>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsRecoveryDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Recovery
               </Button>
               
-              <Button variant="outline" onClick={() => setIsAllOrdersDialogOpen(true)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAllOrdersDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
                 <ListOrdered className="mr-2 h-4 w-4" />
                 All Orders
               </Button>
             </div>
             
-            <Button onClick={() => navigate("/pos-shop")}>Back to Shops</Button>
+            <Button 
+              onClick={() => navigate("/pos-shop")}
+              className="w-full sm:w-auto"
+            >
+              Back to Shops
+            </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-          <div className="col-span-8">
+          <div className="col-span-12 md:col-span-8">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center gap-4">
+              <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
                   <CardTitle>Products</CardTitle>
-                  <AddProductButton />
+                  <div className="w-full sm:w-auto">
+                    <AddProductButton />
+                  </div>
                 </div>
                 <Input
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full max-w-sm"
+                  className="w-full sm:max-w-sm"
                 />
               </CardHeader>
               <CardContent>
@@ -299,7 +277,7 @@ const POSSession = () => {
             </Card>
           </div>
 
-          <div className="col-span-4">
+          <div className="col-span-12 md:col-span-4">
             <Card className="h-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-lg font-medium">
@@ -428,11 +406,13 @@ const POSSession = () => {
       </div>
 
       <Dialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[90vh] h-auto">
           <DialogHeader>
             <DialogTitle>Payment Recovery</DialogTitle>
           </DialogHeader>
-          <RecoveryForm onSuccess={() => setIsRecoveryDialogOpen(false)} />
+          <ScrollArea className="max-h-[calc(90vh-130px)]">
+            <RecoveryForm onSuccess={() => setIsRecoveryDialogOpen(false)} />
+          </ScrollArea>
         </DialogContent>
       </Dialog>
       

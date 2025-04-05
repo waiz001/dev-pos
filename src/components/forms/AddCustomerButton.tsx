@@ -56,7 +56,7 @@ const AddCustomerButton = () => {
               Enter the customer details below.
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-120px)]">
+          <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
             <div className="p-1">
               <CustomerForm onSubmit={handleAddCustomer} buttonText="Add Customer" />
             </div>

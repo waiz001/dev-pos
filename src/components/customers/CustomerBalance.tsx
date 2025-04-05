@@ -16,6 +16,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { orders, Order, Customer } from "@/utils/data";
 import { format } from "date-fns";
 import { CreditCard, DollarSign } from "lucide-react";
@@ -68,19 +69,21 @@ const CustomerBalance: React.FC<CustomerBalanceProps> = ({ customer, onSuccess }
 
       <h4 className="text-lg font-semibold mb-4">Pending Payments</h4>
 
-      {pendingOrders.length === 0 ? (
-        <Card>
-          <CardContent className="py-4 text-center">
-            <p className="text-muted-foreground">No pending payments</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {pendingOrders.map((order) => (
-            <PendingOrderCard key={order.id} order={order} />
-          ))}
-        </div>
-      )}
+      <ScrollArea className="max-h-[60vh]">
+        {pendingOrders.length === 0 ? (
+          <Card>
+            <CardContent className="py-4 text-center">
+              <p className="text-muted-foreground">No pending payments</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {pendingOrders.map((order) => (
+              <PendingOrderCard key={order.id} order={order} />
+            ))}
+          </div>
+        )}
+      </ScrollArea>
       
       {onSuccess && (
         <div className="mt-4 flex justify-end">

@@ -45,7 +45,7 @@ const AddProductButton = () => {
           <DialogHeader>
             <DialogTitle>Add New Product</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="max-h-[calc(90vh-120px)]">
+          <ScrollArea className="max-h-[calc(90vh-120px)] pr-4">
             <div className="p-1">
               <ProductForm onSubmit={handleAddProduct} buttonText="Add Product" />
             </div>

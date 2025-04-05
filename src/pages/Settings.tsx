@@ -12,7 +12,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { updateSetting, Setting } from "@/utils/data";
 import SettingForm from "@/components/forms/SettingForm";
@@ -38,14 +37,16 @@ const Settings = () => {
         <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Settings</h1>
         
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="mb-4 w-full flex flex-wrap md:flex-nowrap overflow-x-auto">
-            <TabsTrigger value="general" className="flex-1">General</TabsTrigger>
-            <TabsTrigger value="payments" className="flex-1">Payment Methods</TabsTrigger>
-            <TabsTrigger value="printer" className="flex-1">Printer</TabsTrigger>
-            <TabsTrigger value="shops" className="flex-1">Shops</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="mb-4 w-full flex flex-nowrap md:flex-nowrap overflow-x-auto">
+              <TabsTrigger value="general" className="flex-1 whitespace-nowrap">General</TabsTrigger>
+              <TabsTrigger value="payments" className="flex-1 whitespace-nowrap">Payment Methods</TabsTrigger>
+              <TabsTrigger value="printer" className="flex-1 whitespace-nowrap">Printer</TabsTrigger>
+              <TabsTrigger value="shops" className="flex-1 whitespace-nowrap">Shops</TabsTrigger>
+            </TabsList>
+          </div>
           
-          <ScrollArea className="h-[calc(100vh-250px)]">
+          <ScrollArea className="h-[calc(100vh-220px)]">
             <TabsContent value="general">
               <Card>
                 <CardHeader>
