@@ -18,15 +18,18 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores, updateCustomer } from "@/utils/data";
 import { toast } from "sonner";
-import { RotateCcw, ListOrdered } from "lucide-react";
+import { RotateCcw, ListOrdered, LogOut } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
 import RecoveryForm from "@/components/pos/RecoveryForm";
 import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
+import { useAuth } from "@/context/AuthContext";
+import { Label } from "@/components/ui/label";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -40,6 +43,9 @@ const POSSession = () => {
   const [isAllOrdersDialogOpen, setIsAllOrdersDialogOpen] = useState(false);
   const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
+  const [isClosePOSDialogOpen, setIsClosePOSDialogOpen] = useState(false);
+  const [closePOSPassword, setClosePOSPassword] = useState("");
+  const { currentUser, logout } = useAuth();
   
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -202,14 +208,32 @@ const POSSession = () => {
     }
   }, [orders]);
 
-  const currentStoreName = currentStoreId 
-    ? stores.find(store => store.id === currentStoreId)?.name || "Unknown Store"
-    : "All Stores";
+  const currentStore = currentStoreId 
+    ? stores.find(store => store.id === currentStoreId) 
+    : null;
+  
+  const currentStoreName = currentStore?.name || "Unknown Store";
 
   const selectedCustomer = selectedCustomerId !== "guest" 
     ? customers.find(c => c.id === selectedCustomerId) 
     : null;
   const customerBalance = selectedCustomer?.totalSpent || 0;
+
+  const handleClosePOS = () => {
+    setIsClosePOSDialogOpen(true);
+  };
+
+  const confirmClosePOS = () => {
+    // Simple validation for the proof of concept
+    if (currentUser && closePOSPassword) {
+      // In a real implementation, we would validate against the actual user password
+      // For demo purposes, we'll accept any non-empty password
+      navigate("/pos-shop");
+      toast.success("POS session closed successfully");
+    } else {
+      toast.error("Please enter your password");
+    }
+  };
 
   return (
     <MainLayout>
@@ -218,6 +242,9 @@ const POSSession = () => {
           <div>
             <h1 className="text-3xl font-bold">POS Session</h1>
             <p className="text-muted-foreground">Store: {currentStoreName}</p>
+            {currentUser && (
+              <p className="text-muted-foreground">Cashier: {currentUser.name}</p>
+            )}
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Badge variant="outline" className="text-lg">
@@ -245,10 +272,12 @@ const POSSession = () => {
             </div>
             
             <Button 
-              onClick={() => navigate("/pos-shop")}
+              onClick={handleClosePOS}
               className="w-full sm:w-auto"
+              variant="destructive"
             >
-              Back to Shops
+              <LogOut className="mr-2 h-4 w-4" />
+              Close POS
             </Button>
           </div>
         </div>
@@ -423,6 +452,36 @@ const POSSession = () => {
         onOpenChange={setIsAllOrdersDialogOpen}
         onSelectOrder={loadOrder}
       />
+
+      <Dialog open={isClosePOSDialogOpen} onOpenChange={setIsClosePOSDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Close POS Session</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p>Please enter your password to close this POS session:</p>
+            <div className="space-y-2">
+              <Label htmlFor="close-password">Password</Label>
+              <Input 
+                id="close-password" 
+                type="password" 
+                value={closePOSPassword}
+                onChange={(e) => setClosePOSPassword(e.target.value)}
+                className="py-6"
+                placeholder="Enter your password"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsClosePOSDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={confirmClosePOS}>
+              Close POS
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

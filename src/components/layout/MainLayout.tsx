@@ -1,5 +1,5 @@
 
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { BellRing, Menu, Search, User, LogOut, UserPlus, Settings, Users, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -23,6 +24,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, logout } = useAuth();
+  const [isPOSSession, setIsPOSSession] = useState(false);
+  
+  useEffect(() => {
+    // Detect if we're in a POS session
+    setIsPOSSession(location.pathname === "/pos-session");
+  }, [location.pathname]);
   
   const isActiveRoute = (path: string) => {
     return location.pathname === path;
@@ -31,6 +38,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleNavigation = (path: string) => {
+    if (isPOSSession) {
+      toast.warning("Please close the POS session before navigating away", {
+        position: "top-center",
+        duration: 3000,
+      });
+      return;
+    }
+    navigate(path);
   };
 
   return (
@@ -58,106 +76,106 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           {/* Sidebar content */}
           <div className="flex-1 overflow-auto p-4">
             <nav className="space-y-1">
-              <Link
-                to="/"
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+              <button
+                onClick={() => handleNavigation("/")}
+                className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                   isActiveRoute("/") 
                     ? "bg-accent text-accent-foreground" 
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`}
               >
                 <span>Dashboard</span>
-              </Link>
+              </button>
               
               {currentUser?.permissions.orders && (
-                <Link
-                  to="/pos-shop"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/pos-shop")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/pos-shop") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>POS Shop</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.products && (
-                <Link
-                  to="/products"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/products")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/products") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Products</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.orders && (
-                <Link
-                  to="/orders"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/orders")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/orders") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Orders</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.customers && (
-                <Link
-                  to="/customers"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/customers")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/customers") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Customers</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.reports && (
-                <Link
-                  to="/reports"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/reports")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/reports") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Reports</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.settings && (
-                <Link
-                  to="/settings"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/settings")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/settings") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Settings</span>
-                </Link>
+                </button>
               )}
               
               {currentUser?.permissions.users && (
-                <Link
-                  to="/users"
-                  className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                <button
+                  onClick={() => handleNavigation("/users")}
+                  className={`w-full flex items-center rounded-md px-3 py-2 text-sm font-medium ${
                     isActiveRoute("/users") 
                       ? "bg-accent text-accent-foreground" 
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <span>Users</span>
-                </Link>
+                </button>
               )}
             </nav>
           </div>
@@ -213,21 +231,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                   <DropdownMenuSeparator />
                   
                   {currentUser?.permissions.users && (
-                    <DropdownMenuItem onClick={() => navigate('/users')}>
+                    <DropdownMenuItem onClick={() => handleNavigation('/users')}>
                       <Users className="mr-2 h-4 w-4" />
                       <span>Manage Users</span>
                     </DropdownMenuItem>
                   )}
                   
                   {currentUser?.permissions.settings && (
-                    <DropdownMenuItem onClick={() => navigate('/settings')}>
+                    <DropdownMenuItem onClick={() => handleNavigation('/settings')}>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>Settings</span>
                     </DropdownMenuItem>
                   )}
                   
                   {currentUser?.permissions.orders && (
-                    <DropdownMenuItem onClick={() => navigate('/pos-shop')}>
+                    <DropdownMenuItem onClick={() => handleNavigation('/pos-shop')}>
                       <ShoppingBag className="mr-2 h-4 w-4" />
                       <span>POS Shop</span>
                     </DropdownMenuItem>
