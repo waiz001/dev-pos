@@ -12,10 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 
 const customerSchema = z.object({
   name: z.string().min(2, {
@@ -24,9 +24,22 @@ const customerSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
-  phone: z.string().optional(),
-  address: z.string().optional(),
+  phone: z.string().min(5, {
+    message: "Phone number must be at least 5 characters.",
+  }),
+  address: z.string().min(5, {
+    message: "Address must be at least 5 characters.",
+  }),
   notes: z.string().optional(),
+  totalSpent: z.union([
+    z.number().min(0, {
+      message: "Balance cannot be negative.",
+    }),
+    z.string().transform((val) => {
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? 0 : parsed;
+    })
+  ]).optional(),
 });
 
 type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -50,27 +63,32 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
       phone: initialData.phone || "",
       address: initialData.address || "",
       notes: initialData.notes || "",
+      totalSpent: initialData.totalSpent || 0,
     },
   });
 
   const handleSubmit = (values: CustomerFormValues) => {
-    onSubmit(values);
-    // Fix the toast message to avoid referencing initialData.name when it might be null
-    const actionText = initialData.id ? "updated" : "created";
-    toast.success(`Customer ${actionText} successfully`);
+    // Convert totalSpent to number before submitting
+    const formattedValues = {
+      ...values,
+      totalSpent: typeof values.totalSpent === 'string' 
+        ? parseFloat(values.totalSpent) || 0 
+        : values.totalSpent || 0
+    };
+    onSubmit(formattedValues);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 w-full px-2 py-2">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
           render={({ field }) => (
-            <FormItem className="mb-4">
-              <FormLabel>Name</FormLabel>
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
               <FormControl>
-                <Input placeholder="Customer name" {...field} />
+                <Input placeholder="John Doe" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -81,41 +99,62 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className="mb-4">
+            <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="customer@example.com" {...field} />
+                <Input type="email" placeholder="john.doe@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem className="mb-4">
-                <FormLabel>Phone (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="555-123-4567" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input placeholder="555-123-4567" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
           name="address"
           render={({ field }) => (
-            <FormItem className="mb-4">
-              <FormLabel>Address (Optional)</FormLabel>
+            <FormItem>
+              <FormLabel>Address</FormLabel>
               <FormControl>
-                <Input placeholder="123 Main St, Anytown, USA" {...field} />
+                <Input placeholder="123 Main St, Anytown" {...field} />
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="totalSpent"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Balance</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  placeholder="0.00" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormDescription>
+                The customer's current balance or credit account standing.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -125,22 +164,20 @@ const CustomerForm: React.FC<CustomerFormProps> = ({
           control={form.control}
           name="notes"
           render={({ field }) => (
-            <FormItem className="mb-4">
+            <FormItem>
               <FormLabel>Notes (Optional)</FormLabel>
               <FormControl>
-                <Textarea rows={3} placeholder="Any additional information" {...field} />
+                <Textarea
+                  placeholder="Additional information about the customer"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full sm:w-auto mt-6"
-        >
-          {buttonText}
-        </Button>
+        <Button type="submit" className="w-full sm:w-auto">{buttonText}</Button>
       </form>
     </Form>
   );

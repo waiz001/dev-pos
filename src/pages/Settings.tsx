@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,25 +12,15 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { updateSetting, Setting } from "@/utils/data";
+import { updateSetting, Setting, addSetting, stores } from "@/utils/data";
 import SettingForm from "@/components/forms/SettingForm";
 import PaymentMethodsManagement from "@/components/settings/PaymentMethodsManagement";
 import PrinterConfiguration from "@/components/settings/PrinterConfiguration";
 import ShopManagement from "@/components/settings/ShopManagement";
-
-// Fix example for the Settings component
-// When updating a setting, make sure to pass an object, not a string
-const handleUpdateSetting = (settingId: string, newValue: Partial<Setting>) => {
-  // Correct way:
-  updateSetting(settingId, newValue);
-  
-  // Incorrect way (what's causing the error):
-  // updateSetting(settingId, newValue);
-};
+import CompanySettings from "@/components/settings/CompanySettings";
+import TaxSettings from "@/components/settings/TaxSettings";
 
 const Settings = () => {
-  // Component implementation
   return (
     <MainLayout>
       <div className="container mx-auto py-6 px-4 md:py-10 md:px-6">
@@ -40,6 +30,8 @@ const Settings = () => {
           <div className="overflow-x-auto">
             <TabsList className="mb-4 w-full flex flex-nowrap md:flex-nowrap overflow-x-auto">
               <TabsTrigger value="general" className="flex-1 whitespace-nowrap">General</TabsTrigger>
+              <TabsTrigger value="company" className="flex-1 whitespace-nowrap">Company</TabsTrigger>
+              <TabsTrigger value="tax" className="flex-1 whitespace-nowrap">Tax</TabsTrigger>
               <TabsTrigger value="payments" className="flex-1 whitespace-nowrap">Payment Methods</TabsTrigger>
               <TabsTrigger value="printer" className="flex-1 whitespace-nowrap">Printer</TabsTrigger>
               <TabsTrigger value="shops" className="flex-1 whitespace-nowrap">Shops</TabsTrigger>
@@ -53,7 +45,33 @@ const Settings = () => {
                   <CardTitle>General Settings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p>General settings content will go here.</p>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Configure general application settings.
+                  </p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="company">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Company Information</CardTitle>
+                  <CardDescription>These details will appear on receipts and invoices</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CompanySettings />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="tax">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tax Settings</CardTitle>
+                  <CardDescription>Configure tax rates for your stores</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TaxSettings />
                 </CardContent>
               </Card>
             </TabsContent>

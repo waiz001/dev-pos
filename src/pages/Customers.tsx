@@ -11,7 +11,6 @@ import {
   deleteCustomer, 
   updateCustomer 
 } from "@/utils/data";
-import { toast } from "sonner";
 import { PlusCircle, Pencil, Trash2, FileUp } from "lucide-react";
 import * as XLSX from 'xlsx';
 
@@ -69,10 +68,8 @@ const Customers = () => {
     try {
       deleteCustomer(id);
       setCustomers(customers.filter(customer => customer.id !== id));
-      toast.success("Customer deleted successfully");
     } catch (error) {
       console.error("Failed to delete customer:", error);
-      toast.error("Failed to delete customer");
     }
   };
 
@@ -80,14 +77,12 @@ const Customers = () => {
     try {
       if (selectedCustomer) {
         updateCustomer(selectedCustomer.id, data);
-        toast.success("Customer updated successfully");
         setCustomers([...allCustomers]);
         setIsDialogOpen(false);
         setSelectedCustomer(null);
       }
     } catch (error) {
       console.error("Failed to update customer:", error);
-      toast.error("Failed to update customer");
     }
   };
 
@@ -124,6 +119,7 @@ const Customers = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>Address</TableHead>
+                  <TableHead>Balance</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -134,6 +130,7 @@ const Customers = () => {
                     <TableCell>{customer.email}</TableCell>
                     <TableCell>{customer.phone}</TableCell>
                     <TableCell>{customer.address}</TableCell>
+                    <TableCell>${customer.totalSpent ? customer.totalSpent.toFixed(2) : '0.00'}</TableCell>
                     <TableCell className="text-right">
                       <Button
                         variant="ghost"
@@ -184,7 +181,6 @@ const Customers = () => {
         type="customers"
         onImportComplete={() => {
           setCustomers([...allCustomers]);
-          toast.success("Customers imported successfully");
         }}
       />
     </MainLayout>

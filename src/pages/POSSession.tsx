@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -29,8 +28,7 @@ import RecoveryForm from "@/components/pos/RecoveryForm";
 import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
 import { useAuth } from "@/context/AuthContext";
 import { Label } from "@/components/ui/label";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import Checkout from "@/components/pos/Checkout";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -47,6 +45,7 @@ const POSSession = () => {
   const [isClosePOSDialogOpen, setIsClosePOSDialogOpen] = useState(false);
   const [closePOSPassword, setClosePOSPassword] = useState("");
   const { currentUser, logout } = useAuth();
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -113,67 +112,15 @@ const POSSession = () => {
     setSelectedPaymentMethod("cash");
   };
 
-  const generateReceipt = () => {
-    const doc = new jsPDF();
-    const currentDate = new Date().toLocaleString();
-    
-    // Add receipt header
-    doc.setFontSize(20);
-    doc.text("Sales Receipt", 105, 20, { align: "center" });
-    
-    doc.setFontSize(10);
-    doc.text(`Date: ${currentDate}`, 20, 30);
-    doc.text(`Payment Method: ${paymentMethods.find(p => p.id === selectedPaymentMethod)?.name || selectedPaymentMethod}`, 20, 35);
-    doc.text(`Receipt #: ${Math.floor(Math.random() * 10000)}`, 20, 40);
-    
-    // Create table with items
-    const tableColumn = ["Item", "Price", "Qty", "Total"];
-    const tableRows = cart.map(item => [
-      item.name,
-      `$${item.price.toFixed(2)}`,
-      item.quantity,
-      `$${(item.price * item.quantity).toFixed(2)}`
-    ]);
-    
-    // Add the table to the PDF
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 50,
-      theme: 'striped',
-      headStyles: { fillColor: [66, 66, 66] },
-    });
-    
-    // Calculate the height of the table we just added
-    const finalY = (doc as any).lastAutoTable.finalY || 150;
-    
-    // Add totals
-    doc.text(`Subtotal: $${calculateTotal().toFixed(2)}`, 150, finalY + 10, { align: "right" });
-    doc.text(`Tax (10%): $${calculateTax().toFixed(2)}`, 150, finalY + 15, { align: "right" });
-    doc.text(`Total: $${(calculateTotal() + calculateTax()).toFixed(2)}`, 150, finalY + 25, { align: "right" });
-    
-    // Add store information
-    const currentStore = stores.find(store => store.id === currentStoreId);
-    if (currentStore) {
-      doc.text(`Store: ${currentStore.name}`, 20, finalY + 30);
-    }
-    
-    if (currentUser) {
-      doc.text(`Cashier: ${currentUser.name}`, 20, finalY + 35);
-    }
-    
-    // Add footer
-    doc.text("Thank you for your purchase!", 105, finalY + 45, { align: "center" });
-    
-    // Save the PDF
-    doc.save("receipt.pdf");
-  };
-
   const handleCheckout = () => {
     if (cart.length === 0) {
       return;
     }
     
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutComplete = () => {
     const selectedCustomer = selectedCustomerId !== "guest" 
       ? customers.find(c => c.id === selectedCustomerId) 
       : null;
@@ -201,9 +148,6 @@ const POSSession = () => {
         
         window.dispatchEvent(new CustomEvent('customer-updated'));
       }
-      
-      // Generate receipt PDF
-      generateReceipt();
       
       if (currentOrderId) {
         const updatedOrder = updateOrder(currentOrderId, {
@@ -265,13 +209,8 @@ const POSSession = () => {
   };
 
   const confirmClosePOS = () => {
-    // Simple validation for the proof of concept
     if (currentUser && closePOSPassword) {
-      // In a real implementation, we would validate against the actual user password
-      // For demo purposes, we'll accept any non-empty password
       navigate("/pos-shop");
-    } else {
-      // No toast notification
     }
   };
 
@@ -475,6 +414,15 @@ const POSSession = () => {
           </div>
         </div>
       </div>
+
+      <Checkout
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        items={cart}
+        onConfirm={handleCheckoutComplete}
+        customerId={selectedCustomerId !== "guest" ? selectedCustomerId : undefined}
+        storeId={currentStoreId || undefined}
+      />
 
       <Dialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen}>
         <DialogContent className="sm:max-w-[425px] max-h-[90vh] h-auto">
