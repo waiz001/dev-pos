@@ -1,17 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { Check, CreditCard, DollarSign, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { CartItem, paymentMethods, customers, settings } from "@/utils/data";
-import { cn } from "@/lib/utils";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -22,6 +11,7 @@ interface CheckoutProps {
   onConfirm: () => void;
   customerId?: string;
   storeId?: string;
+  selectedPaymentMethod: string;
 }
 
 const Checkout: React.FC<CheckoutProps> = ({
@@ -30,9 +20,9 @@ const Checkout: React.FC<CheckoutProps> = ({
   items,
   onConfirm,
   customerId,
-  storeId
+  storeId,
+  selectedPaymentMethod
 }) => {
-  const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0].id);
   const [isProcessing, setIsProcessing] = useState(false);
   const [companyInfo, setCompanyInfo] = useState({
     name: "",
@@ -41,6 +31,12 @@ const Checkout: React.FC<CheckoutProps> = ({
     phone: "",
     taxRate: 10 // Default tax rate
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      handleConfirm();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     // Load company information from settings
@@ -120,7 +116,7 @@ const Checkout: React.FC<CheckoutProps> = ({
     doc.setFontSize(9);
     doc.text(`Date: ${currentDate}`, 5, yPos);
     yPos += 4;
-    doc.text(`Payment: ${paymentMethods.find(p => p.id === selectedPayment)?.name || selectedPayment}`, 5, yPos);
+    doc.text(`Payment: ${paymentMethods.find(p => p.id === selectedPaymentMethod)?.name || selectedPaymentMethod}`, 5, yPos);
     yPos += 4;
     doc.text(`Receipt #: ${Math.floor(Math.random() * 10000)}`, 5, yPos);
     yPos += 6;
@@ -207,91 +203,15 @@ const Checkout: React.FC<CheckoutProps> = ({
         // Call onConfirm to clear the cart and start a new order
         onConfirm();
         
-        // Close the checkout dialog after successful payment
+        // Close the checkout process
         onClose();
       } catch (error) {
         console.error("Error during order confirmation:", error);
       }
-    }, 1500);
+    }, 1000);
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Payment</DialogTitle>
-          <DialogDescription>Complete your payment</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Tax ({companyInfo.taxRate}%)</span>
-              <span>${tax.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-base font-medium">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="mb-2 font-medium">Payment Method</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {paymentMethods.map((method) => (
-                <Button
-                  key={method.id}
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    "justify-start transition-smooth",
-                    selectedPayment === method.id && "border-primary/50 bg-primary/5"
-                  )}
-                  onClick={() => setSelectedPayment(method.id)}
-                >
-                  {method.id === "cash" ? (
-                    <DollarSign className="mr-2 h-4 w-4" />
-                  ) : (
-                    <CreditCard className="mr-2 h-4 w-4" />
-                  )}
-                  {method.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <DialogFooter className="flex sm:justify-between">
-          <Button type="button" variant="outline" onClick={onClose}>
-            <X className="mr-2 h-4 w-4" />
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={isProcessing}
-            onClick={handleConfirm}
-            className="min-w-[120px]"
-          >
-            {isProcessing ? (
-              <span className="flex items-center">
-                <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Processing...
-              </span>
-            ) : (
-              <span className="flex items-center">
-                <Check className="mr-2 h-4 w-4" />
-                Pay ${total.toFixed(2)}
-              </span>
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
+  return null; // No UI is rendered, everything happens programmatically
 };
 
 export default Checkout;

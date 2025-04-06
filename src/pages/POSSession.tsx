@@ -422,6 +422,7 @@ const POSSession = () => {
         onConfirm={handleCheckoutComplete}
         customerId={selectedCustomerId !== "guest" ? selectedCustomerId : undefined}
         storeId={currentStoreId || undefined}
+        selectedPaymentMethod={selectedPaymentMethod}
       />
 
       <Dialog open={isRecoveryDialogOpen} onOpenChange={setIsRecoveryDialogOpen}>

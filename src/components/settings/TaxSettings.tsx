@@ -19,9 +19,8 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { addSetting, updateSetting, settings, stores } from "@/utils/data";
-import { Plus, Save, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 const TaxSettings = () => {
   const [selectedStoreId, setSelectedStoreId] = useState("");
@@ -116,8 +115,13 @@ const TaxSettings = () => {
     setStoreTaxes(storeTaxes.filter(tax => tax.id !== taxId));
   };
 
-  // Filter stores that are already created
-  const availableStores = stores.filter(store => store.id && store.name);
+  // Filter stores that are already created and have ID/name
+  const availableStores = stores.filter(store => 
+    store.id && 
+    store.name && 
+    store.id.trim() !== "" && 
+    store.name.trim() !== ""
+  );
 
   return (
     <div className="space-y-6">

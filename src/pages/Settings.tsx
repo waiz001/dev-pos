@@ -46,7 +46,10 @@ const Settings = () => {
                   <CardDescription>Configure general application settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <CompanySettings />
+                  <p className="text-sm text-muted-foreground mb-4">
+                    These are the application-wide settings used throughout the system.
+                  </p>
+                  {/* General app settings would go here */}
                 </CardContent>
               </Card>
             </TabsContent>
