@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addOrder, products, orders, customers, paymentMethods, updateOrder, Order, stores, updateCustomer } from "@/utils/data";
-import { toast } from "sonner";
 import { RotateCcw, ListOrdered, LogOut } from "lucide-react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import AddProductButton from "@/components/forms/AddProductButton";
@@ -30,6 +29,8 @@ import RecoveryForm from "@/components/pos/RecoveryForm";
 import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
 import { useAuth } from "@/context/AuthContext";
 import { Label } from "@/components/ui/label";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -78,8 +79,6 @@ const POSSession = () => {
     } else {
       setCart([...cart, { ...product, quantity: 1 }]);
     }
-    
-    toast.success(`${product.name} added to cart`);
   };
 
   const removeFromCart = (productId: string) => {
@@ -114,11 +113,64 @@ const POSSession = () => {
     setSelectedPaymentMethod("cash");
   };
 
+  const generateReceipt = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleString();
+    
+    // Add receipt header
+    doc.setFontSize(20);
+    doc.text("Sales Receipt", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.text(`Date: ${currentDate}`, 20, 30);
+    doc.text(`Payment Method: ${paymentMethods.find(p => p.id === selectedPaymentMethod)?.name || selectedPaymentMethod}`, 20, 35);
+    doc.text(`Receipt #: ${Math.floor(Math.random() * 10000)}`, 20, 40);
+    
+    // Create table with items
+    const tableColumn = ["Item", "Price", "Qty", "Total"];
+    const tableRows = cart.map(item => [
+      item.name,
+      `$${item.price.toFixed(2)}`,
+      item.quantity,
+      `$${(item.price * item.quantity).toFixed(2)}`
+    ]);
+    
+    // Add the table to the PDF
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 50,
+      theme: 'striped',
+      headStyles: { fillColor: [66, 66, 66] },
+    });
+    
+    // Calculate the height of the table we just added
+    const finalY = (doc as any).lastAutoTable.finalY || 150;
+    
+    // Add totals
+    doc.text(`Subtotal: $${calculateTotal().toFixed(2)}`, 150, finalY + 10, { align: "right" });
+    doc.text(`Tax (10%): $${calculateTax().toFixed(2)}`, 150, finalY + 15, { align: "right" });
+    doc.text(`Total: $${(calculateTotal() + calculateTax()).toFixed(2)}`, 150, finalY + 25, { align: "right" });
+    
+    // Add store information
+    const currentStore = stores.find(store => store.id === currentStoreId);
+    if (currentStore) {
+      doc.text(`Store: ${currentStore.name}`, 20, finalY + 30);
+    }
+    
+    if (currentUser) {
+      doc.text(`Cashier: ${currentUser.name}`, 20, finalY + 35);
+    }
+    
+    // Add footer
+    doc.text("Thank you for your purchase!", 105, finalY + 45, { align: "center" });
+    
+    // Save the PDF
+    doc.save("receipt.pdf");
+  };
+
   const handleCheckout = () => {
     if (cart.length === 0) {
-      toast.error("Cart is empty", {
-        position: "bottom-center"
-      });
       return;
     }
     
@@ -150,6 +202,9 @@ const POSSession = () => {
         window.dispatchEvent(new CustomEvent('customer-updated'));
       }
       
+      // Generate receipt PDF
+      generateReceipt();
+      
       if (currentOrderId) {
         const updatedOrder = updateOrder(currentOrderId, {
           ...orderData,
@@ -159,27 +214,14 @@ const POSSession = () => {
         if (updatedOrder) {
           setLastOrderId(updatedOrder.id);
           resetCart();
-          toast.success("Order completed successfully", {
-            position: "bottom-center"
-          });
-        } else {
-          toast.error("Failed to update order", {
-            position: "bottom-center"
-          });
         }
       } else {
         const order = addOrder(orderData);
         setLastOrderId(order.id);
         resetCart();
-        toast.success("Order completed successfully", {
-          position: "bottom-center"
-        });
       }
     } catch (error) {
       console.error("Error creating order:", error);
-      toast.error("Failed to complete order", {
-        position: "bottom-center"
-      });
     }
   };
 
@@ -188,7 +230,6 @@ const POSSession = () => {
     setSelectedCustomerId(order.customerId || "guest");
     setSelectedPaymentMethod(order.paymentMethod);
     setCurrentOrderId(order.id);
-    toast.info(`Order ${order.id} loaded`);
   };
   
   const [todayOrders, setTodayOrders] = useState([]);
@@ -229,9 +270,8 @@ const POSSession = () => {
       // In a real implementation, we would validate against the actual user password
       // For demo purposes, we'll accept any non-empty password
       navigate("/pos-shop");
-      toast.success("POS session closed successfully");
     } else {
-      toast.error("Please enter your password");
+      // No toast notification
     }
   };
 

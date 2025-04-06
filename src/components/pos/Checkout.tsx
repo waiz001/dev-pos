@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { CartItem, paymentMethods } from "@/utils/data";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -94,17 +93,10 @@ const Checkout: React.FC<CheckoutProps> = ({
         // Call onConfirm to clear the cart and start a new order
         onConfirm();
         
-        toast.success("Payment successful!", {
-          position: "bottom-center"
-        });
-        
         // Close the checkout dialog after successful payment
         onClose();
       } catch (error) {
         console.error("Error during order confirmation:", error);
-        toast.error("Failed to complete order", {
-          position: "bottom-center"
-        });
       }
     }, 1500);
   };

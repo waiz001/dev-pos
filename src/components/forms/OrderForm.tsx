@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
 
 const orderSchema = z.object({
   customerId: z.string().optional(),
@@ -115,7 +114,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
 
   const handleSubmit = (values: OrderFormValues) => {
     if (cart.length === 0) {
-      toast.error("Please add at least one product to the order");
       return;
     }
 
@@ -134,8 +132,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
       
       // Dispatch the custom event to notify other components about the customer update
       window.dispatchEvent(new CustomEvent('customer-updated'));
-      
-      toast.success(`Added $${total.toFixed(2)} to ${selectedCustomer.name}'s balance`);
     }
 
     onSubmit({
@@ -154,8 +150,6 @@ const OrderForm: React.FC<OrderFormProps> = ({
     });
     setCart([]);
     setSearchQuery("");
-    
-    toast.success("Order saved successfully");
   };
 
   // Watch the customerId and paymentMethod for conditional rendering
