@@ -29,6 +29,7 @@ import AllOrdersDialog from "@/components/pos/AllOrdersDialog";
 import { useAuth } from "@/context/AuthContext";
 import { Label } from "@/components/ui/label";
 import Checkout from "@/components/pos/Checkout";
+import { toast } from "sonner";
 
 const POSSession = () => {
   const navigate = useNavigate();
@@ -44,7 +45,8 @@ const POSSession = () => {
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   const [isClosePOSDialogOpen, setIsClosePOSDialogOpen] = useState(false);
   const [closePOSPassword, setClosePOSPassword] = useState("");
-  const { currentUser, logout } = useAuth();
+  const [isClosingPOS, setIsClosingPOS] = useState(false);
+  const { currentUser, login, logout } = useAuth();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
   useEffect(() => {
@@ -208,9 +210,27 @@ const POSSession = () => {
     setIsClosePOSDialogOpen(true);
   };
 
-  const confirmClosePOS = () => {
-    if (currentUser && closePOSPassword) {
-      navigate("/pos-shop");
+  const confirmClosePOS = async () => {
+    if (!currentUser || !closePOSPassword) {
+      return;
+    }
+    
+    setIsClosingPOS(true);
+    
+    try {
+      const success = await login(currentUser.username, closePOSPassword);
+      
+      if (success) {
+        toast.success("Session closed successfully");
+        navigate("/pos-shop");
+      } else {
+        toast.error("Incorrect password. Please try again.");
+      }
+    } catch (error) {
+      toast.error("An error occurred. Please try again.");
+      console.error("Error during session close:", error);
+    } finally {
+      setIsClosingPOS(false);
     }
   };
 
@@ -448,7 +468,7 @@ const POSSession = () => {
             <DialogTitle>Close POS Session</DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            <p>Please enter your password to close this POS session:</p>
+            <p>Please re-enter your password to verify your identity before closing this POS session:</p>
             <div className="space-y-2">
               <Label htmlFor="close-password">Password</Label>
               <Input 
@@ -465,8 +485,11 @@ const POSSession = () => {
             <Button variant="outline" onClick={() => setIsClosePOSDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={confirmClosePOS}>
-              Close POS
+            <Button 
+              onClick={confirmClosePOS} 
+              disabled={isClosingPOS || !closePOSPassword}
+            >
+              {isClosingPOS ? "Verifying..." : "Close POS"}
             </Button>
           </DialogFooter>
         </DialogContent>
