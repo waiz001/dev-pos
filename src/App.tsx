@@ -171,13 +171,15 @@ const AppRouter = () => {
   );
 };
 
-// App component with proper provider nesting
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AppRouter />
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Fix: Convert App to a proper functional component and wrap it correctly with the QueryClientProvider
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AppRouter />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
