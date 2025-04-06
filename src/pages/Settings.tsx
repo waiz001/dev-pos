@@ -43,11 +43,10 @@ const Settings = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>General Settings</CardTitle>
+                  <CardDescription>Configure general application settings</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Configure general application settings.
-                  </p>
+                  <CompanySettings />
                 </CardContent>
               </Card>
             </TabsContent>

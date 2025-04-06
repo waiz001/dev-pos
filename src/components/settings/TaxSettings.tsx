@@ -24,19 +24,11 @@ import { addSetting, updateSetting, settings, stores } from "@/utils/data";
 import { Plus, Save, X } from "lucide-react";
 
 const TaxSettings = () => {
-  const [globalTaxRate, setGlobalTaxRate] = useState("");
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [storeTaxRate, setStoreTaxRate] = useState("");
   const [storeTaxes, setStoreTaxes] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
-
+  
   useEffect(() => {
-    // Load existing tax settings
-    const taxSetting = settings.find(s => s.name === "Tax Rate");
-    if (taxSetting) {
-      setGlobalTaxRate(taxSetting.value);
-    }
-
     // Load store-specific tax rates
     const storeSpecificTaxes = settings.filter(
       s => s.name.startsWith("Tax Rate-") && s.category === "tax"
@@ -55,27 +47,6 @@ const TaxSettings = () => {
 
     setStoreTaxes(storeRates);
   }, []);
-
-  const handleSaveGlobalTax = () => {
-    setIsSaving(true);
-
-    // Update or create global tax setting
-    const existingTaxSetting = settings.find(s => s.name === "Tax Rate");
-    if (existingTaxSetting) {
-      updateSetting(existingTaxSetting.id, { value: globalTaxRate });
-    } else {
-      addSetting({
-        name: "Tax Rate",
-        value: globalTaxRate,
-        category: "tax",
-        description: "Default sales tax percentage"
-      });
-    }
-
-    setTimeout(() => {
-      setIsSaving(false);
-    }, 500);
-  };
 
   const handleAddStoreTax = () => {
     if (!selectedStoreId || !storeTaxRate) return;
@@ -145,47 +116,11 @@ const TaxSettings = () => {
     setStoreTaxes(storeTaxes.filter(tax => tax.id !== taxId));
   };
 
+  // Filter stores that are already created
+  const availableStores = stores.filter(store => store.id && store.name);
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="pt-6">
-          <h3 className="text-lg font-medium mb-4">Global Tax Rate</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-            <div className="space-y-2">
-              <Label htmlFor="globalTaxRate">Default Tax Rate (%)</Label>
-              <Input
-                id="globalTaxRate"
-                type="number"
-                min="0"
-                step="0.01"
-                value={globalTaxRate}
-                onChange={(e) => setGlobalTaxRate(e.target.value)}
-                placeholder="e.g. 10.00"
-              />
-            </div>
-            
-            <Button 
-              onClick={handleSaveGlobalTax} 
-              disabled={isSaving}
-              className="w-full md:w-auto self-end"
-            >
-              {isSaving ? (
-                <>
-                  <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Global Tax Rate
-                </>
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       <Card>
         <CardContent className="pt-6">
           <h3 className="text-lg font-medium mb-4">Store-Specific Tax Rates</h3>
@@ -198,7 +133,7 @@ const TaxSettings = () => {
                   <SelectValue placeholder="Select a store" />
                 </SelectTrigger>
                 <SelectContent>
-                  {stores.map((store) => (
+                  {availableStores.map((store) => (
                     <SelectItem key={store.id} value={store.id}>
                       {store.name}
                     </SelectItem>

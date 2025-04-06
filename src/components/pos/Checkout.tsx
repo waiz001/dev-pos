@@ -51,20 +51,14 @@ const Checkout: React.FC<CheckoutProps> = ({
     
     // Get tax rate for specific store if available
     let taxRate = 10; // Default 10%
-    const taxSetting = settings.find(s => s.name === "Tax Rate");
-    if (taxSetting) {
-      if (storeId) {
-        // Try to find store-specific tax
-        const storeTaxSetting = settings.find(
-          s => s.name === `Tax Rate-${storeId}` && s.category === "tax"
-        );
-        if (storeTaxSetting) {
-          taxRate = parseFloat(storeTaxSetting.value);
-        } else {
-          taxRate = parseFloat(taxSetting.value);
-        }
-      } else {
-        taxRate = parseFloat(taxSetting.value);
+    
+    if (storeId) {
+      // Try to find store-specific tax
+      const storeTaxSetting = settings.find(
+        s => s.name === `Tax Rate-${storeId}` && s.category === "tax"
+      );
+      if (storeTaxSetting) {
+        taxRate = parseFloat(storeTaxSetting.value);
       }
     }
 
@@ -85,7 +79,7 @@ const Checkout: React.FC<CheckoutProps> = ({
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
-      format: [80, 150] // Standard thermal receipt width (80mm) with adjustable height
+      format: [80, 200] // Standard thermal receipt width (80mm) with adjustable height
     });
     
     const currentDate = new Date().toLocaleString();
@@ -225,25 +219,11 @@ const Checkout: React.FC<CheckoutProps> = ({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Checkout</DialogTitle>
-          <DialogDescription>Complete your purchase</DialogDescription>
+          <DialogTitle>Payment</DialogTitle>
+          <DialogDescription>Complete your payment</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div>
-            <h3 className="mb-2 font-medium">Order Summary</h3>
-            <div className="max-h-64 space-y-2 overflow-auto rounded-md border p-2">
-              {items.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span>
-                    {item.name} × {item.quantity}
-                  </span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span>Subtotal</span>
