@@ -29,12 +29,13 @@ export function VoiceCommandButton({
   showTranscript = false,
   label,
   position = "inline",
-  continuousListening = false,
+  continuousListening = true, // Default to true for continuous listening
   ...props
 }: VoiceCommandButtonProps) {
   const [isListening, setIsListening] = useState(false);
   const [supported, setSupported] = useState(true);
   const [transcript, setTranscript] = useState("");
+  const [lastTranscriptTime, setLastTranscriptTime] = useState(0);
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -49,6 +50,7 @@ export function VoiceCommandButton({
     speechRecognition
       .setOnResult((newTranscript) => {
         setTranscript(newTranscript);
+        setLastTranscriptTime(Date.now());
         if (onTranscript) onTranscript(newTranscript);
       })
       .setOnListeningChange((listening) => {
@@ -68,6 +70,20 @@ export function VoiceCommandButton({
       }
     };
   }, [commands, onTranscript, continuousListening, isListening]);
+
+  // Effect to clear transcript after a delay if no new transcript is received
+  useEffect(() => {
+    if (!transcript) return;
+    
+    const clearTimer = setTimeout(() => {
+      // If it's been more than 5 seconds since the last transcript update
+      if (Date.now() - lastTranscriptTime > 5000) {
+        setTranscript("");
+      }
+    }, 5000);
+    
+    return () => clearTimeout(clearTimer);
+  }, [transcript, lastTranscriptTime]);
 
   const toggleListening = () => {
     if (!supported) {

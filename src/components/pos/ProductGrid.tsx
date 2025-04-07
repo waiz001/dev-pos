@@ -47,6 +47,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
               onClick={() => onAddToCart(product)}
               data-testid={`add-product-${product.id}`}
               data-product-button={product.name.toLowerCase()}
+              aria-label={`Add ${product.name} to cart`}
             >
               <Plus className="mr-1 h-4 w-4" />
               Add

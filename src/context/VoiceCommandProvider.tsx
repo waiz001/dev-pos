@@ -37,6 +37,29 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setIsListening(!isListening);
   };
 
+  // Find and click buttons by their text content or attributes
+  const findAndClickButton = (selector: string) => {
+    // First try by data-testid or other attributes
+    let button = document.querySelector(selector);
+    
+    if (!button) {
+      // Try to find by text content (case insensitive)
+      const buttons = Array.from(document.querySelectorAll('button'));
+      button = buttons.find(btn => {
+        const text = btn.textContent?.toLowerCase() || '';
+        const selectorText = selector.replace(/.*:contains\("(.*)"\)/, '$1').toLowerCase();
+        return text.includes(selectorText);
+      });
+    }
+    
+    if (button && button instanceof HTMLButtonElement) {
+      button.click();
+      return true;
+    }
+    
+    return false;
+  };
+
   // Location-specific commands
   const getPageCommands = () => {
     const path = location.pathname;
@@ -45,11 +68,11 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const commonCommands = [
       {
         command: "help",
-        phrases: ["show help", "what can I say"],
+        phrases: ["show help", "what can I say", "help me", "show commands", "commands"],
         action: () => {
           toast.info(
             "Voice commands: 'home', 'products', 'orders', 'customers', 'reports', 'settings', 'users', 'pos', 'shop', 'logout', 'help'",
-            { duration: 5000 }
+            { duration: 8000 }
           );
         }
       }
@@ -61,7 +84,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ...commonCommands,
         {
           command: "new sale",
-          phrases: ["start sale", "begin sale", "open register"],
+          phrases: ["start sale", "begin sale", "open register", "start selling", "begin selling"],
           action: () => navigate('/pos-session', { replace: true })
         }
       ];
@@ -72,13 +95,9 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ...commonCommands,
         {
           command: "add product",
-          phrases: ["new product", "create product"],
+          phrases: ["new product", "create product", "make product", "add a product"],
           action: () => {
-            // Trigger add product dialog
-            const button = document.querySelector('[data-testid="add-product-button"]');
-            if (button && button instanceof HTMLButtonElement) {
-              button.click();
-            }
+            findAndClickButton('[data-testid="add-product-button"]');
           }
         }
       ];
@@ -89,63 +108,67 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ...commonCommands,
         {
           command: "add customer",
-          phrases: ["new customer", "create customer"],
+          phrases: ["new customer", "create customer", "make customer", "add a customer"],
           action: () => {
-            // Trigger add customer dialog
-            const button = document.querySelector('[data-testid="add-customer-button"]');
-            if (button && button instanceof HTMLButtonElement) {
-              button.click();
-            }
+            findAndClickButton('[data-testid="add-customer-button"]');
           }
         }
       ];
     }
     
     if (path === '/pos-shop') {
-      const productCommands = Array.isArray(products) ? 
-        products.map(product => ({
-          command: product.name.toLowerCase(),
-          action: () => {
-            // Find the store card and click its "Start POS Session" button
-            const storeCards = document.querySelectorAll('.card');
-            if (storeCards.length > 0) {
-              const firstCard = storeCards[0];
-              const startButton = firstCard.querySelector('button');
-              if (startButton && startButton instanceof HTMLButtonElement) {
-                startButton.click();
-                
-                // Set timeout to allow navigation to complete before attempting to add product
-                setTimeout(() => {
-                  // Find and click on product with matching name
-                  const productItems = document.querySelectorAll('.product-item');
-                  productItems.forEach(item => {
-                    const nameElement = item.querySelector('div.font-medium');
-                    if (nameElement && nameElement.textContent === product.name) {
-                      const addButton = item.querySelector('button');
-                      if (addButton && addButton instanceof HTMLButtonElement) addButton.click();
-                    }
-                  });
-                }, 500);
+      // Get all unique product names from the product list
+      const productNames = Array.isArray(products) ? 
+        [...new Set(products.map(product => product.name.toLowerCase()))] : [];
+      
+      // Create commands for each product
+      const productCommands = productNames.map(productName => ({
+        command: productName,
+        phrases: [`add ${productName}`, `select ${productName}`, `choose ${productName}`],
+        action: () => {
+          // Wait a short time for any navigation to complete
+          setTimeout(() => {
+            // Find product button by its data attribute or content
+            const productItem = document.querySelector(`[data-product-name="${productName}"]`);
+            
+            if (productItem) {
+              const addButton = productItem.querySelector('button[data-product-button]');
+              if (addButton && addButton instanceof HTMLButtonElement) {
+                addButton.click();
+                toast.success(`Added ${productName} to cart`);
+              }
+            } else {
+              // If not found directly, try to find button with matching text
+              const buttons = Array.from(document.querySelectorAll('button[data-product-button]'));
+              const matchingButton = buttons.find(btn => {
+                const btnProductName = btn.getAttribute('data-product-button')?.toLowerCase();
+                return btnProductName === productName;
+              });
+              
+              if (matchingButton && matchingButton instanceof HTMLButtonElement) {
+                matchingButton.click();
+                toast.success(`Added ${productName} to cart`);
               }
             }
-          }
-        })) : [];
-        
+          }, 100);
+        }
+      }));
+      
       return [
         ...commonCommands,
         {
           command: "add product",
-          phrases: ["new product", "create product"],
+          phrases: ["new product", "create product", "make product"],
           action: () => {
-            // Find and click the Add Product button
-            const addButton = document.querySelector('button:has(.PlusCircle)');
-            if (addButton && addButton instanceof HTMLButtonElement) {
-              addButton.dispatchEvent(
-                new MouseEvent('click', { bubbles: true })
-              );
-            } else {
-              toast.error("Add Product button not found");
-            }
+            findAndClickButton('button:has(.PlusCircle)') || 
+            findAndClickButton('[data-testid="add-product-button"]');
+          }
+        },
+        {
+          command: "start pos",
+          phrases: ["open register", "begin selling", "start selling", "open pos", "start pos session"],
+          action: () => {
+            findAndClickButton('[data-testid="start-pos-button"]');
           }
         },
         ...productCommands
@@ -153,39 +176,52 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
     
     if (path.includes('/pos-session')) {
-      // Add product recognition for POS session
-      const productCommands = Array.isArray(products) ? 
-        products.map(product => ({
-          command: product.name.toLowerCase(),
-          action: () => {
-            // Find and click on product with matching name
-            const productItems = document.querySelectorAll('.product-item');
-            productItems.forEach(item => {
-              const nameElement = item.querySelector('div.font-medium');
-              if (nameElement && nameElement.textContent === product.name) {
-                const addButton = item.querySelector('button');
-                if (addButton && addButton instanceof HTMLButtonElement) addButton.click();
-              }
+      // Get all unique product names from the product list
+      const productNames = Array.isArray(products) ? 
+        [...new Set(products.map(product => product.name.toLowerCase()))] : [];
+      
+      // Create commands for each product 
+      const productCommands = productNames.map(productName => ({
+        command: productName,
+        phrases: [`add ${productName}`, `select ${productName}`, `choose ${productName}`],
+        action: () => {
+          // Find product button by its data attribute
+          const productItem = document.querySelector(`[data-product-name="${productName}"]`);
+          
+          if (productItem) {
+            const addButton = productItem.querySelector('button');
+            if (addButton && addButton instanceof HTMLButtonElement) {
+              addButton.click();
+              toast.success(`Added ${productName} to cart`);
+            }
+          } else {
+            // If not found by attribute, try to find by button text
+            const buttons = Array.from(document.querySelectorAll('button[data-product-button]'));
+            const matchingButton = buttons.find(btn => {
+              const btnProductName = btn.getAttribute('data-product-button')?.toLowerCase();
+              return btnProductName === productName;
             });
+            
+            if (matchingButton && matchingButton instanceof HTMLButtonElement) {
+              matchingButton.click();
+              toast.success(`Added ${productName} to cart`);
+            }
           }
-        })) : [];
+        }
+      }));
         
       return [
         ...commonCommands,
         {
           command: "checkout",
-          phrases: ["pay now", "process payment"],
+          phrases: ["pay now", "process payment", "complete sale", "finish order", "checkout now"],
           action: () => {
-            // Find and click Pay button
-            const payButton = document.querySelector('button:contains("Pay")');
-            if (payButton && payButton instanceof HTMLButtonElement) {
-              payButton.click();
-            }
+            findAndClickButton('button:contains("Pay")');
           }
         },
         {
           command: "clear cart",
-          phrases: ["empty cart", "remove items"],
+          phrases: ["empty cart", "remove items", "clear all items", "start over"],
           action: () => {
             // Loop through all items and click remove
             const removeButtons = document.querySelectorAll('.cart-item button:contains("X")');

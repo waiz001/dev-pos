@@ -70,8 +70,14 @@ const POSShop = () => {
         <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="text-2xl md:text-3xl font-bold">POS Shop</h1>
           <div className="flex items-center gap-4">
-            <AddProductButton />
-            <Button onClick={() => navigate("/")} className="w-full md:w-auto">Back to Dashboard</Button>
+            <AddProductButton data-testid="add-product-button" />
+            <Button 
+              onClick={() => navigate("/")} 
+              className="w-full md:w-auto"
+              data-testid="back-to-dashboard-button"
+            >
+              Back to Dashboard
+            </Button>
           </div>
         </div>
 
@@ -85,7 +91,7 @@ const POSShop = () => {
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {shops.map((store) => (
-              <Card key={store.id} className="overflow-hidden flex flex-col h-full">
+              <Card key={store.id} className="overflow-hidden flex flex-col h-full shop-card" data-shop-id={store.id}>
                 <div className="h-40 md:h-48 overflow-hidden">
                   <img 
                     src={store.image} 
@@ -126,6 +132,8 @@ const POSShop = () => {
                     className="w-full" 
                     onClick={() => handleStartPOS(store.id)}
                     data-testid="start-pos-button"
+                    data-store-id={store.id}
+                    data-store-name={store.name}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Start POS Session
