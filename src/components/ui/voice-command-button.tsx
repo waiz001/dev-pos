@@ -14,6 +14,9 @@ interface VoiceCommandButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
     action: () => void;
     phrases?: string[];
   }>;
+  showTranscript?: boolean;
+  label?: string;
+  position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | "inline";
 }
 
 export function VoiceCommandButton({
@@ -22,10 +25,14 @@ export function VoiceCommandButton({
   onTranscript,
   commands = [],
   className,
+  showTranscript = false,
+  label,
+  position = "inline",
   ...props
 }: VoiceCommandButtonProps) {
   const [isListening, setIsListening] = useState(false);
   const [supported, setSupported] = useState(true);
+  const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -33,13 +40,14 @@ export function VoiceCommandButton({
     
     // Register commands
     if (commands.length > 0) {
-      speechRecognition.registerCommands(commands);
+      speechRecognition.clearCommands().registerCommands(commands);
     }
 
     // Set callbacks
     speechRecognition
-      .setOnResult((transcript) => {
-        if (onTranscript) onTranscript(transcript);
+      .setOnResult((newTranscript) => {
+        setTranscript(newTranscript);
+        if (onTranscript) onTranscript(newTranscript);
       })
       .setOnListeningChange(setIsListening);
 
@@ -59,6 +67,7 @@ export function VoiceCommandButton({
 
     if (isListening) {
       speechRecognition.stopListening();
+      setTranscript("");
     } else {
       speechRecognition.startListening();
       toast.info("Listening for voice commands...");
@@ -69,17 +78,40 @@ export function VoiceCommandButton({
     return null; // Don't show the button if not supported
   }
 
+  const positionClasses = {
+    "top-right": "fixed top-4 right-4 z-50",
+    "top-left": "fixed top-4 left-4 z-50",
+    "bottom-right": "fixed bottom-4 right-4 z-50",
+    "bottom-left": "fixed bottom-4 left-4 z-50",
+    "inline": "",
+  };
+
   return (
-    <Button
-      onClick={toggleListening}
-      size={size}
-      variant={variant}
-      className={className}
-      {...props}
-      aria-label={isListening ? "Stop listening" : "Start voice command"}
-      title={isListening ? "Stop listening" : "Start voice command"}
-    >
-      {isListening ? <Mic className="h-5 w-5 text-red-500 animate-pulse" /> : <MicOff className="h-5 w-5" />}
-    </Button>
+    <div className={position !== "inline" ? positionClasses[position] : ""}>
+      <div className="flex flex-col items-center">
+        <Button
+          onClick={toggleListening}
+          size={size}
+          variant={isListening ? "default" : variant}
+          className={`${className} ${isListening ? "bg-red-500 hover:bg-red-600" : ""}`}
+          {...props}
+          aria-label={isListening ? "Stop listening" : "Start voice command"}
+          title={isListening ? "Stop listening" : "Start voice command"}
+        >
+          {isListening ? 
+            <Mic className="h-5 w-5 text-white animate-pulse" /> : 
+            <MicOff className="h-5 w-5" />
+          }
+          {label && <span className="ml-2">{label}</span>}
+        </Button>
+        
+        {showTranscript && transcript && (
+          <div className="mt-2 text-sm bg-background border rounded-md p-2 shadow-sm max-w-xs">
+            <p className="font-medium">I heard:</p>
+            <p className="italic">"{transcript}"</p>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

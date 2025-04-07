@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import {
   useLocation 
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { VoiceCommandProvider } from "@/context/VoiceCommandProvider";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import Orders from "./pages/Orders";
@@ -72,100 +72,102 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Router component with AuthProvider
+// Router component with AuthProvider and VoiceCommandProvider
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route 
-            path="/" 
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/products" 
-            element={
-              <ProtectedRoute>
-                <Products />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/orders" 
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/customers" 
-            element={
-              <ProtectedRoute>
-                <Customers />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/reports" 
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/settings" 
-            element={
-              <ProtectedRoute>
-                <Settings />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/users" 
-            element={
-              <ProtectedRoute>
-                <Users />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/pos-session" 
-            element={
-              <ProtectedRoute>
-                <POSSession />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/pos-shop" 
-            element={
-              <ProtectedRoute>
-                <POSShop />
-              </ProtectedRoute>
-            } 
-          />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster />
-        <Sonner />
+        <VoiceCommandProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route 
+              path="/" 
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/products" 
+              element={
+                <ProtectedRoute>
+                  <Products />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/orders" 
+              element={
+                <ProtectedRoute>
+                  <Orders />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/customers" 
+              element={
+                <ProtectedRoute>
+                  <Customers />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/reports" 
+              element={
+                <ProtectedRoute>
+                  <Reports />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/settings" 
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/users" 
+              element={
+                <ProtectedRoute>
+                  <Users />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/pos-session" 
+              element={
+                <ProtectedRoute>
+                  <POSSession />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/pos-shop" 
+              element={
+                <ProtectedRoute>
+                  <POSShop />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </VoiceCommandProvider>
       </AuthProvider>
     </BrowserRouter>
   );

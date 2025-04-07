@@ -14,9 +14,11 @@ class SpeechRecognitionService {
   private commands: SpeechCommand[] = [];
   private onResultCallback: ((transcript: string) => void) | null = null;
   private onListeningChangeCallback: ((isListening: boolean) => void) | null = null;
+  private globalCommands: SpeechCommand[] = [];
 
   constructor() {
     this.initRecognition();
+    this.setupGlobalCommands();
   }
 
   private initRecognition() {
@@ -40,6 +42,82 @@ class SpeechRecognitionService {
       this.recognition.onend = this.handleEnd.bind(this);
       this.recognition.onerror = this.handleError.bind(this);
     }
+  }
+
+  private setupGlobalCommands() {
+    // Setup global commands that work throughout the application
+    this.globalCommands = [
+      {
+        command: "home",
+        phrases: ["go home", "dashboard", "main screen"],
+        action: () => {
+          window.location.href = "/";
+        }
+      },
+      {
+        command: "logout",
+        phrases: ["sign out", "exit system"],
+        action: () => {
+          window.location.href = "/login";
+        }
+      },
+      {
+        command: "products",
+        phrases: ["show products", "goto products"],
+        action: () => {
+          window.location.href = "/products";
+        }
+      },
+      {
+        command: "orders",
+        phrases: ["show orders", "goto orders"],
+        action: () => {
+          window.location.href = "/orders";
+        }
+      },
+      {
+        command: "customers",
+        phrases: ["show customers", "goto customers"],
+        action: () => {
+          window.location.href = "/customers";
+        }
+      },
+      {
+        command: "reports",
+        phrases: ["show reports", "goto reports"],
+        action: () => {
+          window.location.href = "/reports";
+        }
+      },
+      {
+        command: "settings",
+        phrases: ["show settings", "goto settings"],
+        action: () => {
+          window.location.href = "/settings";
+        }
+      },
+      {
+        command: "users",
+        phrases: ["show users", "goto users"],
+        action: () => {
+          window.location.href = "/users";
+        }
+      },
+      {
+        command: "pos",
+        phrases: ["open pos", "start pos", "point of sale"],
+        action: () => {
+          window.location.href = "/pos-session";
+        }
+      },
+      {
+        command: "shop",
+        phrases: ["shop mode", "open shop"],
+        action: () => {
+          window.location.href = "/pos-shop";
+        }
+      }
+    ];
   }
 
   public setOnResult(callback: (transcript: string) => void) {
@@ -91,7 +169,27 @@ class SpeechRecognitionService {
   }
 
   private processCommands(transcript: string) {
+    // First check page-specific commands
     for (const cmd of this.commands) {
+      // Check if the transcript matches the command directly
+      if (transcript.includes(cmd.command.toLowerCase())) {
+        cmd.action();
+        return;
+      }
+
+      // Check alternate phrases if provided
+      if (cmd.phrases) {
+        for (const phrase of cmd.phrases) {
+          if (transcript.includes(phrase.toLowerCase())) {
+            cmd.action();
+            return;
+          }
+        }
+      }
+    }
+
+    // Then check global commands
+    for (const cmd of this.globalCommands) {
       // Check if the transcript matches the command directly
       if (transcript.includes(cmd.command.toLowerCase())) {
         cmd.action();
@@ -145,6 +243,11 @@ class SpeechRecognitionService {
 
   public isSupported(): boolean {
     return ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+  }
+
+  public clearCommands() {
+    this.commands = [];
+    return this;
   }
 }
 
