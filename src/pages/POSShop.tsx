@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import AddProductButton from "@/components/forms/AddProductButton";
 
 // Load shops from localStorage or use defaults from utils/data
 const loadShops = () => {
@@ -69,6 +70,7 @@ const POSShop = () => {
         <div className="mb-4 md:mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <h1 className="text-2xl md:text-3xl font-bold">POS Shop</h1>
           <div className="flex items-center gap-4">
+            <AddProductButton />
             <Button onClick={() => navigate("/")} className="w-full md:w-auto">Back to Dashboard</Button>
           </div>
         </div>
@@ -123,6 +125,7 @@ const POSShop = () => {
                   <Button 
                     className="w-full" 
                     onClick={() => handleStartPOS(store.id)}
+                    data-testid="start-pos-button"
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Start POS Session

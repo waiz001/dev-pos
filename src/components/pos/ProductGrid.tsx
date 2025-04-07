@@ -26,6 +26,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
         <Card
           key={product.id}
           className="product-item overflow-hidden animate-scale-in"
+          data-product-name={product.name}
+          data-product-id={product.id}
         >
           <div className="relative aspect-square overflow-hidden">
             <img
@@ -43,6 +45,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
               className="w-full transition-smooth"
               size="sm"
               onClick={() => onAddToCart(product)}
+              data-testid={`add-product-${product.id}`}
             >
               <Plus className="mr-1 h-4 w-4" />
               Add
