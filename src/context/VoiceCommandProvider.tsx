@@ -75,9 +75,10 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           phrases: ["new product", "create product"],
           action: () => {
             // Trigger add product dialog
-            document.querySelector('[data-testid="add-product-button"]')?.dispatchEvent(
-              new MouseEvent('click', { bubbles: true })
-            );
+            const button = document.querySelector('[data-testid="add-product-button"]');
+            if (button && button instanceof HTMLButtonElement) {
+              button.click();
+            }
           }
         }
       ];
@@ -91,9 +92,10 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           phrases: ["new customer", "create customer"],
           action: () => {
             // Trigger add customer dialog
-            document.querySelector('[data-testid="add-customer-button"]')?.dispatchEvent(
-              new MouseEvent('click', { bubbles: true })
-            );
+            const button = document.querySelector('[data-testid="add-customer-button"]');
+            if (button && button instanceof HTMLButtonElement) {
+              button.click();
+            }
           }
         }
       ];
@@ -109,7 +111,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
             if (storeCards.length > 0) {
               const firstCard = storeCards[0];
               const startButton = firstCard.querySelector('button');
-              if (startButton) {
+              if (startButton && startButton instanceof HTMLButtonElement) {
                 startButton.click();
                 
                 // Set timeout to allow navigation to complete before attempting to add product
@@ -120,7 +122,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     const nameElement = item.querySelector('div.font-medium');
                     if (nameElement && nameElement.textContent === product.name) {
                       const addButton = item.querySelector('button');
-                      if (addButton) addButton.click();
+                      if (addButton && addButton instanceof HTMLButtonElement) addButton.click();
                     }
                   });
                 }, 500);
@@ -137,7 +139,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           action: () => {
             // Find and click the Add Product button
             const addButton = document.querySelector('button:has(.PlusCircle)');
-            if (addButton) {
+            if (addButton && addButton instanceof HTMLButtonElement) {
               addButton.dispatchEvent(
                 new MouseEvent('click', { bubbles: true })
               );
@@ -162,7 +164,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
               const nameElement = item.querySelector('div.font-medium');
               if (nameElement && nameElement.textContent === product.name) {
                 const addButton = item.querySelector('button');
-                if (addButton) addButton.click();
+                if (addButton && addButton instanceof HTMLButtonElement) addButton.click();
               }
             });
           }
@@ -176,7 +178,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           action: () => {
             // Find and click Pay button
             const payButton = document.querySelector('button:contains("Pay")');
-            if (payButton) {
+            if (payButton && payButton instanceof HTMLButtonElement) {
               payButton.click();
             }
           }
@@ -187,7 +189,11 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           action: () => {
             // Loop through all items and click remove
             const removeButtons = document.querySelectorAll('.cart-item button:contains("X")');
-            removeButtons.forEach(button => button.click());
+            removeButtons.forEach(button => {
+              if (button instanceof HTMLButtonElement) {
+                button.click();
+              }
+            });
           }
         },
         ...productCommands
@@ -212,6 +218,7 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           size="default"
           variant="secondary"
           label="Voice Commands"
+          continuousListening={true}
         />
       )}
     </VoiceCommandContext.Provider>

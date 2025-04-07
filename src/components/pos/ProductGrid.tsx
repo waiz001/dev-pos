@@ -26,7 +26,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
         <Card
           key={product.id}
           className="product-item overflow-hidden animate-scale-in"
-          data-product-name={product.name}
+          data-product-name={product.name.toLowerCase()}
           data-product-id={product.id}
         >
           <div className="relative aspect-square overflow-hidden">
@@ -46,6 +46,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToCart }) => {
               size="sm"
               onClick={() => onAddToCart(product)}
               data-testid={`add-product-${product.id}`}
+              data-product-button={product.name.toLowerCase()}
             >
               <Plus className="mr-1 h-4 w-4" />
               Add

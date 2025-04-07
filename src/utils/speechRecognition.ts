@@ -51,96 +51,85 @@ class SpeechRecognitionService {
         command: "home",
         phrases: ["go home", "dashboard", "main screen"],
         action: () => {
-          // Use history API instead of directly changing location to prevent full reload
-          const history = window.history;
-          history.pushState({}, "", "/");
-          // Dispatch a navigation event to notify React Router
-          window.dispatchEvent(new Event('popstate'));
+          // Navigate without page reload
+          this.navigateWithoutReload("/");
         }
       },
       {
         command: "logout",
         phrases: ["sign out", "exit system"],
         action: () => {
-          // Use history API instead of directly changing location
-          const history = window.history;
-          history.pushState({}, "", "/login");
-          window.dispatchEvent(new Event('popstate'));
+          // Navigate without page reload
+          this.navigateWithoutReload("/login");
         }
       },
       {
         command: "products",
         phrases: ["show products", "goto products"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/products");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/products");
         }
       },
       {
         command: "orders",
         phrases: ["show orders", "goto orders"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/orders");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/orders");
         }
       },
       {
         command: "customers",
         phrases: ["show customers", "goto customers"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/customers");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/customers");
         }
       },
       {
         command: "reports",
         phrases: ["show reports", "goto reports"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/reports");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/reports");
         }
       },
       {
         command: "settings",
         phrases: ["show settings", "goto settings"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/settings");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/settings");
         }
       },
       {
         command: "users",
         phrases: ["show users", "goto users"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/users");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/users");
         }
       },
       {
         command: "pos",
         phrases: ["open pos", "start pos", "point of sale"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/pos-session");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/pos-session");
         }
       },
       {
         command: "shop",
         phrases: ["shop mode", "open shop"],
         action: () => {
-          const history = window.history;
-          history.pushState({}, "", "/pos-shop");
-          window.dispatchEvent(new Event('popstate'));
+          this.navigateWithoutReload("/pos-shop");
         }
       }
     ];
+  }
+
+  private navigateWithoutReload(path: string) {
+    // Use React Router's navigation without page reload
+    if (window.location.pathname !== path) {
+      const history = window.history;
+      history.pushState({}, "", path);
+      // Dispatch a navigation event to notify React Router
+      window.dispatchEvent(new Event('popstate'));
+    }
   }
 
   public setOnResult(callback: (transcript: string) => void) {

@@ -17,6 +17,7 @@ interface VoiceCommandButtonProps extends React.ButtonHTMLAttributes<HTMLButtonE
   showTranscript?: boolean;
   label?: string;
   position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | "inline";
+  continuousListening?: boolean;
 }
 
 export function VoiceCommandButton({
@@ -28,6 +29,7 @@ export function VoiceCommandButton({
   showTranscript = false,
   label,
   position = "inline",
+  continuousListening = false,
   ...props
 }: VoiceCommandButtonProps) {
   const [isListening, setIsListening] = useState(false);
@@ -49,7 +51,15 @@ export function VoiceCommandButton({
         setTranscript(newTranscript);
         if (onTranscript) onTranscript(newTranscript);
       })
-      .setOnListeningChange(setIsListening);
+      .setOnListeningChange((listening) => {
+        setIsListening(listening);
+        // If continuous listening is enabled and recognition stopped, restart it
+        if (continuousListening && !listening && isListening) {
+          setTimeout(() => {
+            speechRecognition.startListening();
+          }, 300);
+        }
+      });
 
     return () => {
       // Clean up by stopping listening if component unmounts while active
@@ -57,7 +67,7 @@ export function VoiceCommandButton({
         speechRecognition.stopListening();
       }
     };
-  }, [commands, onTranscript]);
+  }, [commands, onTranscript, continuousListening, isListening]);
 
   const toggleListening = () => {
     if (!supported) {
@@ -68,6 +78,8 @@ export function VoiceCommandButton({
     if (isListening) {
       speechRecognition.stopListening();
       setTranscript("");
+      // Ensure we don't auto-restart
+      setIsListening(false);
     } else {
       speechRecognition.startListening();
       toast.info("Listening for voice commands...");
