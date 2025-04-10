@@ -15,7 +15,7 @@ class SpeechRecognitionService {
   private onResultCallback: ((transcript: string) => void) | null = null;
   private onListeningChangeCallback: ((isListening: boolean) => void) | null = null;
   private globalCommands: SpeechCommand[] = [];
-  private commandMatchThreshold: number = 0.7; // Fuzzy matching threshold
+  private commandMatchThreshold: number = 0.65; // Lower threshold for better matching
 
   constructor() {
     this.initRecognition();
@@ -36,7 +36,7 @@ class SpeechRecognitionService {
     if (this.recognition) {
       this.recognition.continuous = false;
       this.recognition.interimResults = true; // Get partial results for faster response
-      this.recognition.maxAlternatives = 3; // Get multiple interpretations
+      this.recognition.maxAlternatives = 5; // Increased alternatives for better accuracy
       this.recognition.lang = 'en-US';
 
       // Set up event handlers
@@ -51,7 +51,7 @@ class SpeechRecognitionService {
     this.globalCommands = [
       {
         command: "home",
-        phrases: ["go home", "dashboard", "main screen", "main menu", "back to home"],
+        phrases: ["go home", "dashboard", "main screen", "main menu", "back to home", "homepage", "home page"],
         action: () => {
           // Navigate without page reload
           this.navigateWithoutReload("/");
@@ -59,7 +59,7 @@ class SpeechRecognitionService {
       },
       {
         command: "logout",
-        phrases: ["sign out", "exit system", "log out", "sign me out"],
+        phrases: ["sign out", "exit system", "log out", "sign me out", "log me out", "exit application"],
         action: () => {
           // Navigate without page reload
           this.navigateWithoutReload("/login");
@@ -67,56 +67,56 @@ class SpeechRecognitionService {
       },
       {
         command: "products",
-        phrases: ["show products", "goto products", "product list", "product page", "view products"],
+        phrases: ["show products", "goto products", "product list", "product page", "view products", "open products", "products page"],
         action: () => {
           this.navigateWithoutReload("/products");
         }
       },
       {
         command: "orders",
-        phrases: ["show orders", "goto orders", "order list", "order page", "view orders"],
+        phrases: ["show orders", "goto orders", "order list", "order page", "view orders", "open orders", "orders page"],
         action: () => {
           this.navigateWithoutReload("/orders");
         }
       },
       {
         command: "customers",
-        phrases: ["show customers", "goto customers", "customer list", "customer page", "view customers"],
+        phrases: ["show customers", "goto customers", "customer list", "customer page", "view customers", "open customers", "customers page"],
         action: () => {
           this.navigateWithoutReload("/customers");
         }
       },
       {
         command: "reports",
-        phrases: ["show reports", "goto reports", "report list", "report page", "view reports"],
+        phrases: ["show reports", "goto reports", "report list", "report page", "view reports", "open reports", "reports page"],
         action: () => {
           this.navigateWithoutReload("/reports");
         }
       },
       {
         command: "settings",
-        phrases: ["show settings", "goto settings", "setting page", "preferences", "view settings"],
+        phrases: ["show settings", "goto settings", "setting page", "preferences", "view settings", "open settings", "settings page"],
         action: () => {
           this.navigateWithoutReload("/settings");
         }
       },
       {
         command: "users",
-        phrases: ["show users", "goto users", "user list", "user page", "view users"],
+        phrases: ["show users", "goto users", "user list", "user page", "view users", "open users", "users page"],
         action: () => {
           this.navigateWithoutReload("/users");
         }
       },
       {
         command: "pos",
-        phrases: ["open pos", "start pos", "point of sale", "goto pos", "pos page", "view pos"],
+        phrases: ["open pos", "start pos", "point of sale", "goto pos", "pos page", "view pos", "pos session", "register"],
         action: () => {
           this.navigateWithoutReload("/pos-session");
         }
       },
       {
         command: "shop",
-        phrases: ["shop mode", "open shop", "goto shop", "shop page", "view shop", "pos shop"],
+        phrases: ["shop mode", "open shop", "goto shop", "shop page", "view shop", "pos shop", "shop view"],
         action: () => {
           this.navigateWithoutReload("/pos-shop");
         }
@@ -134,7 +134,7 @@ class SpeechRecognitionService {
     }
   }
 
-  // Calculate similarity between two strings (for fuzzy matching)
+  // Enhanced string similarity algorithm for better matching
   private stringSimilarity(s1: string, s2: string): number {
     const longer = s1.length > s2.length ? s1 : s2;
     const shorter = s1.length > s2.length ? s2 : s1;
@@ -148,22 +148,53 @@ class SpeechRecognitionService {
       return 0.9;
     }
     
-    // Check for words match
-    const s1Words = s1.toLowerCase().split(' ');
-    const s2Words = s2.toLowerCase().split(' ');
+    // Check for words match with improved algorithm
+    const s1Words = s1.toLowerCase().split(' ').filter(w => w.length > 1);
+    const s2Words = s2.toLowerCase().split(' ').filter(w => w.length > 1);
     
+    // Count matching words
     let matchCount = 0;
     for (const word of s1Words) {
-      if (s2Words.includes(word) && word.length > 1) {
+      if (s2Words.includes(word)) {
         matchCount++;
       }
     }
     
+    // If we have word matches, calculate a score
     if (matchCount > 0) {
       return matchCount / Math.max(s1Words.length, s2Words.length);
     }
     
-    return 0;
+    // If no direct word matches, try character-level matching
+    // Levenshtein distance implementation (simplified)
+    const editDistance = (a: string, b: string): number => {
+      if (a.length === 0) return b.length;
+      if (b.length === 0) return a.length;
+      
+      const matrix = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(null));
+      
+      for (let i = 0; i <= a.length; i++) matrix[i][0] = i;
+      for (let j = 0; j <= b.length; j++) matrix[0][j] = j;
+      
+      for (let i = 1; i <= a.length; i++) {
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          matrix[i][j] = Math.min(
+            matrix[i - 1][j] + 1,      // deletion
+            matrix[i][j - 1] + 1,      // insertion
+            matrix[i - 1][j - 1] + cost // substitution
+          );
+        }
+      }
+      
+      return matrix[a.length][b.length];
+    };
+    
+    const distance = editDistance(s1.toLowerCase(), s2.toLowerCase());
+    const maxLen = Math.max(s1.length, s2.length);
+    
+    // Convert edit distance to similarity (0-1 scale)
+    return 1 - (distance / maxLen);
   }
 
   public setOnResult(callback: (transcript: string) => void) {

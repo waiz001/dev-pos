@@ -94,11 +94,12 @@ export function VoiceCommandButton({
     if (isListening) {
       speechRecognition.stopListening();
       setTranscript("");
-      // Ensure we don't auto-restart
+      // Ensure we stop auto-restart
       setIsListening(false);
     } else {
       speechRecognition.startListening();
       toast.info("Listening for voice commands...");
+      setIsListening(true);
     }
   };
 
