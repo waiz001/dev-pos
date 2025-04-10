@@ -69,6 +69,40 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return false;
   };
 
+  // Find and interact with select/input elements
+  const findAndInteractWithElement = (selector: string, action: string) => {
+    // For select elements (like customer or payment method)
+    const selectElements = Array.from(document.querySelectorAll('select, [role="combobox"]'));
+    
+    for (const element of selectElements) {
+      const label = document.querySelector(`label[for="${element.id}"]`);
+      const labelText = label?.textContent?.toLowerCase() || '';
+      
+      if (labelText.includes(selector.toLowerCase())) {
+        if (element instanceof HTMLElement) {
+          element.click();
+          toast.success(`Opened ${selector} selection`);
+          return true;
+        }
+      }
+    }
+    
+    // Try clicking on select triggers with specific text
+    const selectTriggers = Array.from(document.querySelectorAll('[role="combobox"]'));
+    const matchingTrigger = selectTriggers.find(trigger => {
+      const text = trigger.textContent?.toLowerCase() || '';
+      return text.includes(selector.toLowerCase());
+    });
+    
+    if (matchingTrigger && matchingTrigger instanceof HTMLElement) {
+      matchingTrigger.click();
+      toast.success(`Opened ${selector} selection`);
+      return true;
+    }
+    
+    return false;
+  };
+
   // Enhanced method to find all buttons on the page for voice commands
   const getAllButtonsAsCommands = () => {
     const buttonCommands = [];
@@ -82,7 +116,12 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Skip buttons with just icons
         buttonCommands.push({
           command: text.toLowerCase(),
-          phrases: [`click ${text.toLowerCase()}`, `press ${text.toLowerCase()}`, `select ${text.toLowerCase()}`],
+          phrases: [
+            `click ${text.toLowerCase()}`, 
+            `press ${text.toLowerCase()}`, 
+            `select ${text.toLowerCase()}`,
+            `${text.toLowerCase()}`
+          ],
           action: () => {
             if (button instanceof HTMLButtonElement) {
               button.click();
@@ -97,7 +136,12 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (ariaLabel && ariaLabel.length > 1) {
         buttonCommands.push({
           command: ariaLabel.toLowerCase(),
-          phrases: [`click ${ariaLabel.toLowerCase()}`, `press ${ariaLabel.toLowerCase()}`, `select ${ariaLabel.toLowerCase()}`],
+          phrases: [
+            `click ${ariaLabel.toLowerCase()}`, 
+            `press ${ariaLabel.toLowerCase()}`, 
+            `select ${ariaLabel.toLowerCase()}`,
+            `${ariaLabel.toLowerCase()}`
+          ],
           action: () => {
             if (button instanceof HTMLButtonElement) {
               button.click();
@@ -285,10 +329,61 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
       // Add specific POS Session commands
       const posSessionCommands = [
         {
-          command: "checkout",
-          phrases: ["pay now", "process payment", "complete sale", "finish order", "checkout now", "pay", "pay order"],
+          command: "pay",
+          phrases: ["pay now", "process payment", "complete sale", "finish order", "checkout now", "pay", "pay order", "checkout", "pay button"],
           action: () => {
-            findAndClickButton('button:contains("Pay")');
+            // Try all possible ways to find and click the pay button
+            const payButtons = Array.from(document.querySelectorAll('button')).filter(btn => {
+              const text = btn.textContent?.toLowerCase().trim();
+              return text === 'pay';
+            });
+            
+            if (payButtons.length > 0 && payButtons[0] instanceof HTMLButtonElement) {
+              payButtons[0].click();
+              toast.success("Processing payment");
+            } else {
+              // If button not found by text, try other selectors
+              findAndClickButton('[data-testid="pay-button"]') ||
+              findAndClickButton('button:contains("Pay")');
+            }
+          }
+        },
+        {
+          command: "select customer",
+          phrases: ["change customer", "choose customer", "customer select", "open customer", "customer dropdown", "select a customer"],
+          action: () => {
+            // Look for customer select dropdown
+            const customerSelect = document.querySelector('select[name="customer"], [aria-label*="customer"], [placeholder*="customer"]');
+            if (customerSelect instanceof HTMLElement) {
+              customerSelect.click();
+              toast.success("Select a customer");
+            } else {
+              // Try to find select trigger with customer text
+              const selectTriggers = Array.from(document.querySelectorAll('[role="combobox"]'));
+              for (const trigger of selectTriggers) {
+                const label = Array.from(document.querySelectorAll('label')).find(lbl => 
+                  lbl.htmlFor === trigger.id || 
+                  lbl.textContent?.toLowerCase().includes('customer')
+                );
+                
+                if (label) {
+                  if (trigger instanceof HTMLElement) {
+                    trigger.click();
+                    toast.success("Select a customer");
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          command: "payment method",
+          phrases: ["select payment", "change payment", "choose payment", "payment options", "payment dropdown", "payment type"],
+          action: () => {
+            // Look for payment method select dropdown
+            findAndInteractWithElement("payment method", "click") || 
+            findAndInteractWithElement("payment", "click");
           }
         },
         {
@@ -297,32 +392,84 @@ export const VoiceCommandProvider: React.FC<{ children: React.ReactNode }> = ({ 
           action: () => {
             // Loop through all items and click remove
             const removeButtons = document.querySelectorAll('.cart-item button:contains("X")');
-            removeButtons.forEach(button => {
-              if (button instanceof HTMLButtonElement) {
-                button.click();
-              }
-            });
+            
+            // If no specific cart item buttons found, look for X buttons
+            if (removeButtons.length === 0) {
+              const allXButtons = Array.from(document.querySelectorAll('button')).filter(btn => 
+                btn.textContent?.trim() === 'X'
+              );
+              
+              allXButtons.forEach(button => {
+                if (button instanceof HTMLButtonElement) {
+                  button.click();
+                }
+              });
+            } else {
+              removeButtons.forEach(button => {
+                if (button instanceof HTMLButtonElement) {
+                  button.click();
+                }
+              });
+            }
+            
+            toast.success("Cart cleared");
           }
         },
         {
           command: "recovery",
-          phrases: ["open recovery", "recovery mode", "find order", "recover order"],
+          phrases: ["open recovery", "recovery mode", "find order", "recover order", "recovery button", "payment recovery"],
           action: () => {
-            findAndClickButton('button:contains("Recovery")');
+            const recoveryButtons = Array.from(document.querySelectorAll('button')).filter(btn => {
+              const text = btn.textContent?.toLowerCase().trim();
+              return text?.includes('recovery');
+            });
+            
+            if (recoveryButtons.length > 0 && recoveryButtons[0] instanceof HTMLButtonElement) {
+              recoveryButtons[0].click();
+              toast.success("Opening recovery");
+            } else {
+              // Try other selectors
+              findAndClickButton('[data-testid="recovery-button"]') ||
+              findAndClickButton('button:contains("Recovery")');
+            }
           }
         },
         {
           command: "all orders",
-          phrases: ["show orders", "view orders", "orders list"],
+          phrases: ["show orders", "view orders", "orders list", "all orders button", "order history", "order list"],
           action: () => {
-            findAndClickButton('button:contains("All Orders")');
+            const ordersButtons = Array.from(document.querySelectorAll('button')).filter(btn => {
+              const text = btn.textContent?.toLowerCase().trim();
+              return text?.includes('all orders');
+            });
+            
+            if (ordersButtons.length > 0 && ordersButtons[0] instanceof HTMLButtonElement) {
+              ordersButtons[0].click();
+              toast.success("Opening all orders");
+            } else {
+              // Try other selectors
+              findAndClickButton('[data-testid="all-orders-button"]') ||
+              findAndClickButton('button:contains("All Orders")');
+            }
           }
         },
         {
           command: "close pos",
-          phrases: ["end session", "close session", "exit pos", "logout pos"],
+          phrases: ["end session", "close session", "exit pos", "logout pos", "close pos button", "finish session"],
           action: () => {
-            findAndClickButton('button:contains("Close POS")');
+            const closeButtons = Array.from(document.querySelectorAll('button')).filter(btn => {
+              const text = btn.textContent?.toLowerCase().trim();
+              return text?.includes('close pos');
+            });
+            
+            if (closeButtons.length > 0 && closeButtons[0] instanceof HTMLButtonElement) {
+              closeButtons[0].click();
+              toast.success("Closing POS session");
+            } else {
+              // Try other selectors
+              findAndClickButton('[data-testid="close-pos-button"]') ||
+              findAndClickButton('button:contains("Close POS")');
+            }
           }
         },
         {

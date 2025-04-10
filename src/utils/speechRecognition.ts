@@ -16,6 +16,7 @@ class SpeechRecognitionService {
   private onListeningChangeCallback: ((isListening: boolean) => void) | null = null;
   private globalCommands: SpeechCommand[] = [];
   private commandMatchThreshold: number = 0.65; // Lower threshold for better matching
+  private restartTimeout: any = null;
 
   constructor() {
     this.initRecognition();
@@ -143,6 +144,11 @@ class SpeechRecognitionService {
       return 1.0;
     }
     
+    // Special case handling for short button commands like "Pay", "Add", etc.
+    if (shorter.length <= 4 && longer.toLowerCase().includes(shorter.toLowerCase())) {
+      return 0.95; // Higher score for exact short matches
+    }
+    
     // Check if the shorter string is contained within the longer one
     if (longer.toLowerCase().includes(shorter.toLowerCase())) {
       return 0.9;
@@ -230,6 +236,12 @@ class SpeechRecognitionService {
     if (this.onListeningChangeCallback) {
       this.onListeningChangeCallback(false);
     }
+    
+    // Clear any existing restart timeout
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
+    }
   }
 
   private handleError(event: SpeechRecognitionErrorEvent) {
@@ -237,6 +249,12 @@ class SpeechRecognitionService {
     this.isListening = false;
     if (this.onListeningChangeCallback) {
       this.onListeningChangeCallback(false);
+    }
+    
+    // Clear any existing restart timeout
+    if (this.restartTimeout) {
+      clearTimeout(this.restartTimeout);
+      this.restartTimeout = null;
     }
   }
 
@@ -251,6 +269,23 @@ class SpeechRecognitionService {
   }
 
   private processCommands(transcript: string) {
+    // Check for special POS buttons that might need more exact matching
+    const posButtonCommands = ["pay", "select customer", "payment method", "all orders", "recovery", "close pos"];
+    for (const buttonCmd of posButtonCommands) {
+      if (transcript.includes(buttonCmd)) {
+        // Find and execute the command directly
+        const match = [...this.commands, ...this.globalCommands].find(cmd => 
+          cmd.command.toLowerCase() === buttonCmd ||
+          cmd.phrases?.some(phrase => phrase.toLowerCase() === buttonCmd)
+        );
+        
+        if (match) {
+          match.action();
+          return;
+        }
+      }
+    }
+    
     // Store all potential command matches with their similarity scores
     type CommandMatch = { command: SpeechCommand, score: number };
     const matches: CommandMatch[] = [];
@@ -352,6 +387,11 @@ class SpeechRecognitionService {
     }
 
     try {
+      // If already listening, stop first to reset
+      if (this.isListening) {
+        this.recognition.stop();
+      }
+      
       this.recognition.start();
       this.isListening = true;
       if (this.onListeningChangeCallback) {
@@ -373,6 +413,12 @@ class SpeechRecognitionService {
         this.onListeningChangeCallback(false);
       }
       console.log('Speech recognition stopped');
+      
+      // Clear any existing restart timeout
+      if (this.restartTimeout) {
+        clearTimeout(this.restartTimeout);
+        this.restartTimeout = null;
+      }
     } catch (error) {
       console.error('Error stopping speech recognition:', error);
     }

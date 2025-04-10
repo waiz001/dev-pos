@@ -36,6 +36,7 @@ export function VoiceCommandButton({
   const [supported, setSupported] = useState(true);
   const [transcript, setTranscript] = useState("");
   const [lastTranscriptTime, setLastTranscriptTime] = useState(0);
+  const [processingRestart, setProcessingRestart] = useState(false);
 
   useEffect(() => {
     // Check if speech recognition is supported
@@ -55,10 +56,15 @@ export function VoiceCommandButton({
       })
       .setOnListeningChange((listening) => {
         setIsListening(listening);
+        
         // If continuous listening is enabled and recognition stopped, restart it
-        if (continuousListening && !listening && isListening) {
+        if (continuousListening && !listening && isListening && !processingRestart) {
+          setProcessingRestart(true);
           setTimeout(() => {
-            speechRecognition.startListening();
+            if (isListening) { // Double-check flag is still true
+              speechRecognition.startListening();
+            }
+            setProcessingRestart(false);
           }, 300);
         }
       });
@@ -92,11 +98,12 @@ export function VoiceCommandButton({
     }
 
     if (isListening) {
+      // When turning off, make sure to stop everything and reset
       speechRecognition.stopListening();
       setTranscript("");
-      // Ensure we stop auto-restart
       setIsListening(false);
     } else {
+      // When turning on, start the recognition
       speechRecognition.startListening();
       toast.info("Listening for voice commands...");
       setIsListening(true);
