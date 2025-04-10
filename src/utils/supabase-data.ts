@@ -1,7 +1,9 @@
 
 import { 
   supabase, 
-  TABLES 
+} from '@/integrations/supabase/client';
+import {
+  TABLES
 } from './supabase';
 import { 
   products, 
@@ -58,7 +60,7 @@ const convertToCamelCase = (obj: Record<string, any>) => {
 export const migrateProducts = async () => {
   try {
     for (const product of products) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.PRODUCTS)
         .upsert({
           id: product.id,
@@ -86,7 +88,7 @@ export const migrateProducts = async () => {
 export const migrateCustomers = async () => {
   try {
     for (const customer of customers) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.CUSTOMERS)
         .upsert({
           id: customer.id,
@@ -115,7 +117,7 @@ export const migrateOrders = async () => {
   try {
     for (const order of orders) {
       // First insert the order
-      const { data: orderData, error: orderError } = await supabase
+      const { error: orderError } = await supabase
         .from(TABLES.ORDERS)
         .upsert({
           id: order.id,
@@ -136,7 +138,7 @@ export const migrateOrders = async () => {
       
       // Then insert all the order items
       for (const item of order.items) {
-        const { data: itemData, error: itemError } = await supabase
+        const { error: itemError } = await supabase
           .from(TABLES.ORDER_ITEMS)
           .upsert({
             id: uuidv4(),
@@ -162,7 +164,7 @@ export const migrateOrders = async () => {
 export const migrateCategories = async () => {
   try {
     for (const category of categories) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.CATEGORIES)
         .upsert({
           id: category.id,
@@ -183,7 +185,7 @@ export const migrateCategories = async () => {
 export const migratePaymentMethods = async () => {
   try {
     for (const method of paymentMethods) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.PAYMENT_METHODS)
         .upsert({
           id: method.id,
@@ -204,7 +206,7 @@ export const migratePaymentMethods = async () => {
 export const migrateStores = async () => {
   try {
     for (const store of stores) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.STORES)
         .upsert({
           id: store.id,
@@ -230,7 +232,7 @@ export const migrateStores = async () => {
 export const migrateSettings = async () => {
   try {
     for (const setting of settings) {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from(TABLES.SETTINGS)
         .upsert({
           id: setting.id,
@@ -280,7 +282,7 @@ export const fetchProducts = async (): Promise<Product[]> => {
     return [];
   }
   
-  return data.map(product => ({
+  return (data || []).map(product => ({
     id: product.id,
     name: product.name,
     price: product.price,
@@ -303,7 +305,7 @@ export const fetchCustomers = async (): Promise<Customer[]> => {
     return [];
   }
   
-  return data.map(customer => ({
+  return (data || []).map(customer => ({
     id: customer.id,
     name: customer.name,
     email: customer.email,
@@ -328,7 +330,7 @@ export const fetchOrders = async (): Promise<Order[]> => {
   
   const orders: Order[] = [];
   
-  for (const order of ordersData) {
+  for (const order of (ordersData || [])) {
     // Fetch order items for this order
     const { data: itemsData, error: itemsError } = await supabase
       .from(TABLES.ORDER_ITEMS)
@@ -340,7 +342,7 @@ export const fetchOrders = async (): Promise<Order[]> => {
       continue;
     }
     
-    const items: CartItem[] = itemsData.map(item => ({
+    const items: CartItem[] = (itemsData || []).map(item => ({
       id: item.product_id,
       name: item.product_name,
       price: item.price,
@@ -376,7 +378,7 @@ export const fetchCategories = async (): Promise<Category[]> => {
     return [];
   }
   
-  return data.map(category => ({
+  return (data || []).map(category => ({
     id: category.id,
     name: category.name,
   }));
@@ -392,7 +394,7 @@ export const fetchPaymentMethods = async (): Promise<PaymentMethod[]> => {
     return [];
   }
   
-  return data.map(method => ({
+  return (data || []).map(method => ({
     id: method.id,
     name: method.name,
   }));
@@ -408,7 +410,7 @@ export const fetchSettings = async (): Promise<Setting[]> => {
     return [];
   }
   
-  return data.map(setting => ({
+  return (data || []).map(setting => ({
     id: setting.id,
     name: setting.name,
     value: setting.value,
@@ -444,7 +446,7 @@ export const addProductToSupabase = async (productData: Omit<Product, "id">): Pr
     return null;
   }
   
-  return {
+  return data ? {
     id: data.id,
     name: data.name,
     price: data.price,
@@ -454,7 +456,7 @@ export const addProductToSupabase = async (productData: Omit<Product, "id">): Pr
     barcode: data.barcode || undefined,
     inStock: data.in_stock,
     storeId: data.store_id || undefined,
-  };
+  } : null;
 };
 
 export const updateProductInSupabase = async (id: string, productData: Partial<Product>): Promise<Product | null> => {
@@ -483,7 +485,7 @@ export const updateProductInSupabase = async (id: string, productData: Partial<P
     return null;
   }
   
-  return {
+  return data ? {
     id: data.id,
     name: data.name,
     price: data.price,
@@ -493,7 +495,7 @@ export const updateProductInSupabase = async (id: string, productData: Partial<P
     barcode: data.barcode || undefined,
     inStock: data.in_stock,
     storeId: data.store_id || undefined,
-  };
+  } : null;
 };
 
 export const deleteProductFromSupabase = async (id: string): Promise<boolean> => {
@@ -536,7 +538,7 @@ export const addCustomerToSupabase = async (customerData: Omit<Customer, "id">):
     return null;
   }
   
-  return {
+  return data ? {
     id: data.id,
     name: data.name,
     email: data.email,
@@ -546,7 +548,7 @@ export const addCustomerToSupabase = async (customerData: Omit<Customer, "id">):
     totalOrders: data.total_orders || undefined,
     totalSpent: data.total_spent || undefined,
     registrationDate: data.registration_date ? new Date(data.registration_date) : undefined,
-  };
+  } : null;
 };
 
 export const updateCustomerInSupabase = async (id: string, customerData: Partial<Customer>): Promise<Customer | null> => {
@@ -575,7 +577,7 @@ export const updateCustomerInSupabase = async (id: string, customerData: Partial
     return null;
   }
   
-  return {
+  return data ? {
     id: data.id,
     name: data.name,
     email: data.email,
@@ -585,7 +587,7 @@ export const updateCustomerInSupabase = async (id: string, customerData: Partial
     totalOrders: data.total_orders || undefined,
     totalSpent: data.total_spent || undefined,
     registrationDate: data.registration_date ? new Date(data.registration_date) : undefined,
-  };
+  } : null;
 };
 
 export const deleteCustomerFromSupabase = async (id: string): Promise<boolean> => {
@@ -741,7 +743,7 @@ export const updateOrderInSupabase = async (id: string, orderData: Partial<Order
     return null;
   }
   
-  const items: CartItem[] = itemsData.map(item => ({
+  const items: CartItem[] = (itemsData || []).map(item => ({
     id: item.product_id,
     name: item.product_name,
     price: item.price,
@@ -749,7 +751,7 @@ export const updateOrderInSupabase = async (id: string, orderData: Partial<Order
     image: '', // Again, we would need a join with products
   }));
   
-  return {
+  return data ? {
     id: data.id,
     customerId: data.customer_id || undefined,
     customerName: data.customer_name || undefined,
@@ -761,7 +763,7 @@ export const updateOrderInSupabase = async (id: string, orderData: Partial<Order
     status: data.status as "completed" | "pending" | "cancelled" | "in-progress",
     storeId: data.store_id || undefined,
     items: items,
-  };
+  } : null;
 };
 
 export const deleteOrderFromSupabase = async (id: string): Promise<boolean> => {
